@@ -1,0 +1,18 @@
+{
+    "name": "baduk-mega-server",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest "
+    },
+    "author": "Huck",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/jest": "^27.0.1",
+        "@types/node": "^16.7.1",
+        "jest": "^27.0.6",
+        "ts-jest": "^27.0.5",
+        "typescript": "^4.3.5"
+    }
+}
