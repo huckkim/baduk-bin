@@ -1,8 +1,6 @@
-import { sum, setupBoard, hasLiberties, Board, Coord, Color } from '../src/index'
-
-test(' add 1 + 2 to equal 3', () => {
-  expect(sum(1, 2)).toBe(3);
-});
+import { exec } from 'child_process';
+import { kill } from 'process';
+import { setupBoard, hasLiberties, killGroup, Board, Coord, Color } from '../src/index'
 
 function isEmpty(board: Board): boolean {
   for (const row of board) {
@@ -104,7 +102,7 @@ test('Single stone group, has all liberties', () => {
   expect(hasLiberties(board, loc)).toBe(true);
 });
 
-test('Single stone group, no liberties', () => {
+test('Single stone group, has no liberties', () => {
   const blackMoves = [new Coord(4, 4)];
   const whiteMoves = [new Coord(3, 4), new Coord(5, 4), new Coord(4, 3), new Coord(4, 5)];
   let [board, _] = setupBoard(9, []);
@@ -118,7 +116,7 @@ test('Single stone group, no liberties', () => {
   expect(hasLiberties(board, loc)).toBe(false);
 });
 
-test('Single stone group, some liberties', () => {
+test('Single stone group, has some liberties', () => {
   const blackMoves = [new Coord(4, 4)];
   const whiteMoves = [new Coord(4, 3), new Coord(4, 5)];
   let [board, _] = setupBoard(9, []);
@@ -184,20 +182,6 @@ test('Single stone group, corner, has all liberties', () => {
   expect(hasLiberties(board, loc)).toBe(true);
 });
 
-test('Single stone group, corner, has some liberties', () => {
-  const blackMoves = [new Coord(8, 8)];
-  const whiteMoves = [new Coord(7, 8)];
-  let [board, _] = setupBoard(9, []);
-  // -------
-  //  X 0  |
-  //       |
-  setColor(board, blackMoves, Color.BLACK);
-  setColor(board, whiteMoves, Color.WHITE);
-  let loc = new Coord(8, 8);
-
-  expect(hasLiberties(board, loc)).toBe(true);
-});
-
 test('Single stone group, corner, has no liberties', () => {
   const blackMoves = [new Coord(8, 8)];
   const whiteMoves = [new Coord(7, 8), new Coord(8, 7)];
@@ -210,6 +194,20 @@ test('Single stone group, corner, has no liberties', () => {
   let loc = new Coord(8, 8);
 
   expect(hasLiberties(board, loc)).toBe(false);
+});
+
+test('Single stone group, corner, has some liberties', () => {
+  const blackMoves = [new Coord(8, 8)];
+  const whiteMoves = [new Coord(7, 8)];
+  let [board, _] = setupBoard(9, []);
+  // -------
+  //  X 0  |
+  //       |
+  setColor(board, blackMoves, Color.BLACK);
+  setColor(board, whiteMoves, Color.WHITE);
+  let loc = new Coord(8, 8);
+
+  expect(hasLiberties(board, loc)).toBe(true);
 });
 
 test('Medium stone group, has all liberties', () => {
@@ -243,6 +241,171 @@ test('Medium stone group, has no liberties', () => {
   expect(hasLiberties(board, loc)).toBe(true);
 });
 
-test('Medium stone group, has some liberties', () => {
+test.todo('Medium stone group, has some liberties');
+
+test.todo('Medium stone group, side, has all liberties');
+test.todo('Medium stone group, side, has no liberties');
+test.todo('Medium stone group, side, has some liberties');
+
+test.todo('Medium stone group, corner, has all liberties');
+test.todo('Medium stone group, corner, has no liberties');
+test.todo('Medium stone group, corner, has some liberties');
+
+test.todo('Large stone group, has all liberties');
+test.todo('Large stone group, has no liberties');
+test.todo('Large stone group, has some liberties');
+
+test.todo('Large stone group, side, has all liberties');
+test.todo('Large stone group, side, has no liberties');
+test.todo('Large stone group, side, has some liberties');
+
+test.todo('Large stone group, corner, has all liberties');
+test.todo('Large stone group, corner, has no liberties');
+test.todo('Large stone group, corner, has some liberties');
+
+
+test('Kill single stone group', () => {
+  const blackMoves = [new Coord(4, 4)];
+  let [board, _] = setupBoard(9, []);
+  //    
+  //   0 
+  //    
+  setColor(board, blackMoves, Color.BLACK);
+  let loc = new Coord(4, 4)
+  let [nBoard, killed] = killGroup(board, loc);
+
+  expect(killed).toBe(blackMoves.length);
+  expect(isEmpty(nBoard)).toBe(true);
+});
+
+test('Kill single stone group, surrounded', () => {
+  const blackMoves = [new Coord(4, 4)];
+  const whiteMoves = [new Coord(3, 4), new Coord(5, 4), new Coord(4, 3), new Coord(4, 5)];
+  let [board, _] = setupBoard(9, []);
+  //    X
+  //  X 0 X
+  //    X
+  setColor(board, blackMoves, Color.BLACK);
+  setColor(board, whiteMoves, Color.WHITE);
+  let loc = new Coord(4, 4)
+  let [nBoard, killed] = killGroup(board, loc);
+
+  setColor(nBoard, whiteMoves, null);
+
+  expect(killed).toBe(blackMoves.length);
+  expect(isEmpty(nBoard)).toBe(true);
+});
+
+test('Kill medium stone group', () => {
+  const blackMoves = [
+    new Coord(4, 4), new Coord(4, 5), new Coord(4, 6), new Coord(4, 7), new Coord(4, 8),
+    new Coord(3, 3), new Coord(3, 4), new Coord(3, 5), new Coord(3, 6),
+  ];
+  let [board, _] = setupBoard(13, []);
+
+  setColor(board, blackMoves, Color.BLACK);
+  let loc = new Coord(4, 4);
+  let [nBoard, killed] = killGroup(board, loc);
+
+  expect(killed).toBe(blackMoves.length);
+  expect(isEmpty(nBoard)).toBe(true);
+});
+
+test('Kill medium stone group, surrounded', () => {
+  const blackMoves = [
+    new Coord(4, 4), new Coord(4, 5), new Coord(4, 6), new Coord(4, 7), new Coord(4, 8),
+    new Coord(3, 3), new Coord(3, 4), new Coord(3, 5), new Coord(3, 6),
+  ];
+  const whiteMoves = [
+    new Coord(3,2), new Coord(2,3), new Coord(4,3),
+    new Coord(2,4), new Coord(5,4),
+    new Coord(2,5), new Coord(5,5),
+    new Coord(2,6), new Coord(5,6),
+    new Coord(3,7), new Coord(5,7),
+    new Coord(3,8), new Coord(5,8),
+    new Coord(4,9)
+  ]
+  let [board, _] = setupBoard(13, []);
+  //   X
+  // X O X
+  // X O O X
+  // X O O X
+  // X O O X
+  //   X O X
+  //   X O X
+  //     X
+
+  setColor(board, blackMoves, Color.BLACK);
+  setColor(board, whiteMoves, Color.WHITE);
+  let loc = new Coord(4, 4);
+  let [nBoard, killed] = killGroup(board, loc);
+
+  setColor(board, whiteMoves, null);
+
+  expect(killed).toBe(blackMoves.length);
+  expect(isEmpty(nBoard)).toBe(true);
+});
+
+test('Kill large stone group', () => {
+  const blackMoves = [
+    new Coord(5,0), new Coord(6,0), new Coord(7,0),
+    new Coord(5,1), new Coord(6,1), new Coord(7,1),
+    new Coord(6,2), new Coord(7,2), new Coord(8,2),
+    new Coord(7,3),
+    new Coord(7,4), new Coord(8,4), new Coord(9,4),
+    new Coord(7,5), new Coord(9,5),
+    new Coord(9,6), new Coord(10,6), new Coord(11,6),
+    new Coord(10,7), new Coord(11,7), 
+    new Coord(10,8), new Coord(11,8), 
+    new Coord(7,9), new Coord(8,9), new Coord(9,9), new Coord(10,9), new Coord(11,9), new Coord(12,9), new Coord(13,9),
+    new Coord(7,10), new Coord(8,10), new Coord(9,10), new Coord(10,10), new Coord(12,10), new Coord(13,10),
+    new Coord(8,11), new Coord(9,11), new Coord(10,11), 
+    new Coord(10,12),
+    new Coord(10,13),
+  ];
+  let [board, _] = setupBoard(19, []);
+
+  setColor(board, blackMoves, Color.BLACK);
+  let loc = new Coord(7, 3);
+  let [nBoard, killed] = killGroup(board, loc);
+
+  expect(killed).toBe(blackMoves.length);
+  expect(isEmpty(nBoard)).toBe(true);
 
 });
+test('Kill large stone group, surrounded', () => {
+
+  const blackMoves = [
+    new Coord(5,0), new Coord(6,0), new Coord(7,0),
+    new Coord(5,1), new Coord(6,1), new Coord(7,1),
+    new Coord(6,2), new Coord(7,2), new Coord(8,2),
+    new Coord(7,3),
+    new Coord(7,4), new Coord(8,4), new Coord(9,4),
+    new Coord(7,5), new Coord(9,5),
+    new Coord(9,6), new Coord(10,6), new Coord(11,6),
+    new Coord(10,7), new Coord(11,7), 
+    new Coord(10,8), new Coord(11,8), 
+    new Coord(7,9), new Coord(8,9), new Coord(9,9), new Coord(10,9), new Coord(11,9), new Coord(12,9), new Coord(13,9),
+    new Coord(7,10), new Coord(8,10), new Coord(9,10), new Coord(10,10), new Coord(12,10), new Coord(13,10),
+    new Coord(8,11), new Coord(9,11), new Coord(10,11), 
+    new Coord(10,12),
+    new Coord(10,13),
+  ];
+  const whiteMoves = [
+  ]
+  let [board, _] = setupBoard(19, []);
+
+  setColor(board, blackMoves, Color.BLACK);
+  setColor(board, whiteMoves, Color.WHITE);
+  let loc = new Coord(7, 3);
+  let [nBoard, killed] = killGroup(board, loc);
+
+  setColor(board, whiteMoves, null);
+
+  expect(killed).toBe(blackMoves.length);
+  expect(isEmpty(nBoard)).toBe(true);
+});
+
+test('Normal board, dead group'){
+
+}

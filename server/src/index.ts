@@ -36,16 +36,17 @@ function playMove(board: Board, curr_player: Color, move: Coord): [boolean, Boar
 // Checks if the group located at loc has any liberties
 // pre: board at loc != null
 export function hasLiberties(board: Board, loc: Coord): boolean{
-  var toVisit: Array<Coord> = [loc];
-  var checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
+  let toVisit: Array<Coord> = [loc];
+  let curr_player = board[loc.y][loc.x];
+  let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
   while (toVisit.length != 0) {
-    var curr = toVisit.pop();
+    let curr = toVisit.pop();
     if (checkGraph[curr.y][curr.x] == "N") {
       // Empty space => liberty
       if (board[curr.y][curr.x] == null)
         return true;
       // if the stone is the same color go to it's neightbours
-      else if (board[curr.y][curr.x] == board[loc.y][loc.x]) {
+      else if (board[curr.y][curr.x] == curr_player) {
         if (curr.y + 1 < board.length)
           toVisit.push(new Coord(curr.x, curr.y + 1));
         if (curr.y - 1 >= 0)
@@ -69,14 +70,58 @@ function commitPlaceAndKill(board: Board, curr_player: Color, move: Coord): [boo
 
 // 
 function killSurroundingGroups(board: Board, loc: Coord): [Board, number]{
+  let toVisit = [loc];
+  let curr_player = board[loc.y][loc.x];
+  let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
+  let killed = 0;
+  while(toVisit.length != 0){
+    let curr = toVisit.pop();
+    if(checkGraph[curr.y][curr.x]){
+      if(board[curr.y][curr.x] == null) continue;
+      else if (board[curr.y][curr.x] == curr_player){
+        if (curr.y + 1 < board.length)
+          toVisit.push(new Coord(curr.x, curr.y + 1));
+        if (curr.y - 1 >= 0)
+          toVisit.push(new Coord(curr.x, curr.y - 1));
+        if (curr.x + 1 < board.length)
+          toVisit.push(new Coord(curr.x + 1, curr.y));
+        if (curr.x - 1 >= 0)
+          toVisit.push(new Coord(curr.x - 1, curr.y));
+      }
+      else{
+        if(!hasLiberties(board, curr)){
+          let [tboard, tkilled] = killGroup(board, curr);
+          board = tboard;
+          killed += tkilled;
+        }
+      }
+    }
+  }
   return [board, 0];
 }
 
-let [board, curr_player] = setupBoard(size, []);
-
-let dead = hasLiberties(board, new Coord(1, 2));
-
-export function sum(x: number, y: number): number{
-  return x + y;
+export function killGroup(board: Board, loc: Coord): [Board, number] {
+  let toVisit = [loc];
+  let curr_player = board[loc.y][loc.x];
+  let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
+  let killed: number = 0;
+  while(toVisit.length != 0){
+    let curr = toVisit.pop();
+    if(checkGraph[curr.y][curr.x] == "N"){
+      if (board[curr.y][curr.x] == curr_player) {
+        board[curr.y][curr.x] = null;
+        killed += 1;
+        if (curr.y + 1 < board.length)
+          toVisit.push(new Coord(curr.x, curr.y + 1));
+        if (curr.y - 1 >= 0)
+          toVisit.push(new Coord(curr.x, curr.y - 1));
+        if (curr.x + 1 < board.length)
+          toVisit.push(new Coord(curr.x + 1, curr.y));
+        if (curr.x - 1 >= 0)
+          toVisit.push(new Coord(curr.x - 1, curr.y));
+      }
+      checkGraph[curr.y][curr.x] = "D";
+    }
+  }
+  return [board, killed];
 }
-
