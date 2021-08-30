@@ -1,3 +1,6 @@
+import { kill } from "process";
+import { cursorTo } from "readline";
+
 export enum Color {
   BLACK,
   WHITE
@@ -63,7 +66,7 @@ export function setColor(board: Board, moves: Array<Coord>, curr_player: Color |
  * @param loc 
  * @return a Board with only the group connected to the stone at loc placed
  */
-function selectGroup(board: Board, loc: Coord): Board{
+export function selectGroup(board: Board, loc: Coord): Board{
   let toVisit = [loc];
   let curr_player = board[loc.y][loc.x];
   let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
@@ -84,6 +87,37 @@ function selectGroup(board: Board, loc: Coord): Board{
           toVisit.push(new Coord(curr.x - 1, curr.y));
       }
       checkGraph[curr.y][curr.x] = "D";
+    }
+  }
+  return nboard;
+}
+
+/**
+ * @param board
+ * @return given a board, return an array of coords for location of black and white stones
+ */
+export function getCoordFromBoard(board: Array<Array<string>>) : [Array<Coord>, Array<Coord>] {
+  let black_coords = [];
+  let white_coords = [];
+  for (let i = 0; i < board.length; ++i){
+    for (let j = 0; j < board.length; ++j){
+      if (board[i][j] == 'X') {
+        black_coords.push(new Coord(j, i));
+      }
+      else if (board[i][j] == 'O') {
+        white_coords.push(new Coord(j, i));
+      }
+    }
+  }
+  return [black_coords, white_coords];
+}
+
+export function getBoardFromStrings(board: Array<Array<string>>): Board{
+  let [nboard,] = setupBoard(board.length, []);
+  for (let i = 0; i < board.length; ++i){
+    for (let j = 0; j < board.length; ++j){
+      if (board[i][j] == 'X') nboard[i][j] = Color.BLACK;
+      else if (board[i][j] == 'O') nboard[i][j] = Color.WHITE;
     }
   }
   return nboard;
@@ -116,10 +150,10 @@ export function setupBoard(size: number, handicap: Array<Coord>): [Board, Color]
 export function hasLiberties(board: Board, loc: Coord): boolean{
   let toVisit = [loc];
   let curr_player = board[loc.y][loc.x];
-  let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
+  let visisted = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
   while (toVisit.length != 0) {
     let curr = toVisit.pop();
-    if (checkGraph[curr.y][curr.x] == "N") {
+    if (!visisted[curr.y][curr.x]) {
       // Empty space => liberty
       if (board[curr.y][curr.x] == null)
         return true;
@@ -134,54 +168,44 @@ export function hasLiberties(board: Board, loc: Coord): boolean{
         if (curr.x - 1 >= 0)
           toVisit.push(new Coord(curr.x - 1, curr.y));
       }
-      checkGraph[curr.y][curr.x] = "D";
+      visisted[curr.y][curr.x] = true;
     }
   }
   return false;
 }
 
 /**
- * 
  * @param board 
  * @param curr_player 
  * @param move 
- * @returns whether the move 
+ * @returns returns if a move is valid and if it is, the resulting board and the number of stones captured
  */
-function commitPlaceAndKill(board: Board, curr_player: Color, move: Coord): [boolean, Board, number]{
-  board[move.y][move.x] = curr_player;
-  return [true, board, 0];  
+function playMove(board: Board, curr_player: Color, move: Coord): [boolean, Board, number]{
+  if (board[move.y][move.x] != null) 
+    return [false, board, 0];
+  return commitPlaceAndKill(board, curr_player, move);
 }
 
 /**
- * pre: board at loc != null
+ * 
  * @param board 
+ * @param curr_player 
  * @param loc 
- * @returns returns board after killing the group at loc, and the number of stones killed
- */
-export function killGroup(board: Board, loc: Coord): [Board, number] {
-  let toVisit = [loc];
-  let curr_player = board[loc.y][loc.x];
-  let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
-  let killed = 0;
-  while(toVisit.length != 0){
-    let curr = toVisit.pop();
-    if(checkGraph[curr.y][curr.x] == "N"){
-      if (board[curr.y][curr.x] == curr_player) {
-        board[curr.y][curr.x] = null;
-        killed += 1;
-        if (curr.y + 1 < board.length)
-          toVisit.push(new Coord(curr.x, curr.y + 1));
-        if (curr.y - 1 >= 0)
-          toVisit.push(new Coord(curr.x, curr.y - 1));
-        if (curr.x + 1 < board.length)
-          toVisit.push(new Coord(curr.x + 1, curr.y));
-        if (curr.x - 1 >= 0)
-          toVisit.push(new Coord(curr.x - 1, curr.y));
-      }
-      checkGraph[curr.y][curr.x] = "D";
-    }
+ * @returns whether the move of placing a stone of curr_player at loc is valid, and if so
+ *          the new board and the number of stones killed
+ */ 
+function commitPlaceAndKill(board: Board, curr_player: Color, loc: Coord): [boolean, Board, number]{
+  board[loc.y][loc.x] = curr_player;
+  if (hasLiberties[loc.y][loc.x]) {
+    let [nboard, killed] = killSurroundingGroups(board, loc);
+    return [true, nboard, killed];
   }
-  return [board, killed];
+  else {
+    let [nboard, killed] = killSurroundingGroups(board, loc);
+    if (killed == 0)
+      return [false, null, null];
+    return [true, nboard, killed];
+  }
 }
 
 /**
@@ -193,11 +217,11 @@ export function killGroup(board: Board, loc: Coord): [Board, number] {
 function killSurroundingGroups(board: Board, loc: Coord): [Board, number]{
   let toVisit = [loc];
   let curr_player = board[loc.y][loc.x];
-  let checkGraph = Array<Array<String>>(board.length).fill(null).map(() => { return new Array<String>(board.length).fill("N") });
+  let visisted = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
   let killed = 0;
   while(toVisit.length != 0){
     let curr = toVisit.pop();
-    if(checkGraph[curr.y][curr.x]){
+    if(!visisted[curr.y][curr.x]){
       if(board[curr.y][curr.x] == null) continue;
       else if (board[curr.y][curr.x] == curr_player){
         if (curr.y + 1 < board.length)
@@ -216,21 +240,67 @@ function killSurroundingGroups(board: Board, loc: Coord): [Board, number]{
           killed += tkilled;
         }
       }
+      visisted[curr.y][curr.x] = true;
     }
   }
-  return [board, 0];
+  return [board, killed];
 }
 
 /**
+ * pre: board at loc != null
  * @param board 
- * @param curr_player 
- * @param move 
- * @returns returns if move is valid, and if it is the resulting board, and the number of stones captured
+ * @param loc 
+ * @returns returns board after killing the group at loc, and the number of stones killed
  */
-function playMove(board: Board, curr_player: Color, move: Coord): [boolean, Board, number]{
-  if (board[move.y][move.x] != null) 
-    return [false, board, 0];
-  return commitPlaceAndKill(board, curr_player, move);
+export function killGroup(board: Board, loc: Coord): [Board, number] {
+  let toVisit = [loc];
+  let curr_player = board[loc.y][loc.x];
+  let visited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
+  let killed = 0;
+  while(toVisit.length != 0){
+    let curr = toVisit.pop();
+    if(!visited[curr.y][curr.x]){
+      if (board[curr.y][curr.x] == curr_player) {
+        board[curr.y][curr.x] = null;
+        killed += 1;
+        if (curr.y + 1 < board.length)
+          toVisit.push(new Coord(curr.x, curr.y + 1));
+        if (curr.y - 1 >= 0)
+          toVisit.push(new Coord(curr.x, curr.y - 1));
+        if (curr.x + 1 < board.length)
+          toVisit.push(new Coord(curr.x + 1, curr.y));
+        if (curr.x - 1 >= 0)
+          toVisit.push(new Coord(curr.x - 1, curr.y));
+      }
+      visited[curr.y][curr.x] = true;
+    }
+  }
+  return [board, killed];
+}
+
+// pre: board at loc is empty
+function findSpaceSize(board: Board, loc: Coord): number{
+  let toVisit = [loc];
+  let visited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
+  let sz = 0;
+  while (toVisit.length != 0) {
+    let curr = toVisit.pop();
+    if (!visited[curr.y][curr.x]) {
+      if (board[curr.y][curr.x] == null) {
+        sz += 1;
+        if (curr.y + 1 < board.length)
+          toVisit.push(new Coord(curr.x, curr.y + 1));
+        if (curr.y - 1 >= 0)
+          toVisit.push(new Coord(curr.x, curr.y - 1));
+        if (curr.x + 1 < board.length)
+          toVisit.push(new Coord(curr.x + 1, curr.y));
+        if (curr.x - 1 >= 0)
+          toVisit.push(new Coord(curr.x - 1, curr.y));
+      }
+      visited[curr.y][curr.x] = true;
+    }
+  }
+  return sz;
 }
 
 /**
@@ -239,7 +309,18 @@ function playMove(board: Board, curr_player: Color, move: Coord): [boolean, Boar
  * @returns return territory points for [black, white]
  */
 function calculateTerritory(board: Board) : [number, number] {
-  return [0, 0];
+  let toVisit = [new Coord(0, 0)];
+  let visited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
+  let black_territory = 0;
+  let white_territory = 0;
+  while (toVisit.length != 0) {
+    let curr = toVisit.pop();
+    if (!visited[curr.y][curr.x]) {
+
+      visited[curr.y][curr.x] = true;
+    }
+  }
+  return [black_territory, white_territory];
 }
 
 /**
