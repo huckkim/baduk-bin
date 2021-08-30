@@ -1,23 +1,12 @@
-import { exec } from 'child_process';
-import { kill } from 'process';
-import { setupBoard, hasLiberties, killGroup, Board, Coord, Color } from '../src/index'
+import { isBoardEmpty, isBoardEqual, setColor, setupBoard, hasLiberties, killGroup, Board, Coord, Color } from '../src/index'
 
-function isEmpty(board: Board): boolean {
-  for (const row of board) {
-    for (const space of row) {
-      if (space != null) return false;
-    }
-  }
-  return true;
-}
+/** 
+ *  Ensure that the setup board returns a valid board given a handicap and the proper player
+ */
 
-function setColor(board: Board, moves: Array<Coord>, curr_player: Color | null): Board {
-  moves.forEach((move) => {
-    board[move.y][move.x] = curr_player;
-  });
-  return board;
-};
-
+// - boards should be correct size
+// - all boards returned should be empty or have black stones placed
+// - black should be the curr player
 test('Setup Board, no handicap, expect black to play', () => {
   let [ , curr_player1] = setupBoard(9, []);
   expect(curr_player1).toBe(Color.BLACK);
@@ -31,13 +20,13 @@ test('Setup Board, no handicap, expect black to play', () => {
 
 test('Setup Board, no handicap, expect empty board', () => {
   let [board1, ] = setupBoard(9, []);
-  expect(isEmpty(board1)).toBe(true);
+  expect(isBoardEmpty(board1)).toBe(true);
 
   let [board2, ] = setupBoard(13, []);
-  expect(isEmpty(board2)).toBe(true);
+  expect(isBoardEmpty(board2)).toBe(true);
 
   let [board3, ] = setupBoard(19, []);
-  expect(isEmpty(board3)).toBe(true);
+  expect(isBoardEmpty(board3)).toBe(true);
 });
 
 test('Setup Board, no handicap, expect correct board sizes', () => {
@@ -71,7 +60,7 @@ test('Setup Board, handicap, expect correct board', () => {
   expect(board1[2][2]).toBe(Color.BLACK);
   expect(board1[5][4]).toBe(Color.BLACK);
   setColor(board1, handicap1, null);
-  expect(isEmpty(board1)).toBe(true);
+  expect(isBoardEmpty(board1)).toBe(true);
 
   const handicap2 = [new Coord(3, 3), new Coord(5, 7), new Coord(8, 8)];
   let [board2, ] = setupBoard(13, handicap2);
@@ -79,7 +68,7 @@ test('Setup Board, handicap, expect correct board', () => {
   expect(board2[7][5]).toBe(Color.BLACK);
   expect(board2[8][8]).toBe(Color.BLACK);
   setColor(board2, handicap2, null);
-  expect(isEmpty(board2)).toBe(true);
+  expect(isBoardEmpty(board2)).toBe(true);
 
   const handicap3 = [new Coord(4, 4), new Coord(14, 14), new Coord(2, 4), new Coord(3, 0)];
   let [board3, ] = setupBoard(19, handicap3);
@@ -88,18 +77,13 @@ test('Setup Board, handicap, expect correct board', () => {
   expect(board3[4][2]).toBe(Color.BLACK);
   expect(board3[0][3]).toBe(Color.BLACK);
   setColor(board3, handicap3, null);
-  expect(isEmpty(board3)).toBe(true);
+  expect(isBoardEmpty(board3)).toBe(true);
 });
 
+// Testing the hasLiberty functions
+// - Should return true if the group connected to the stone at loc has liberties
+//   and false if it doesn't
 test('Single stone group, has all liberties', () => {
-  let [board, _] = setupBoard(9, []);
-  //     
-  //   0
-  // 
-  board[4][4] = Color.BLACK;
-  let loc = new Coord(4, 4);
-
-  expect(hasLiberties(board, loc)).toBe(true);
 });
 
 test('Single stone group, has no liberties', () => {
@@ -275,7 +259,7 @@ test('Kill single stone group', () => {
   let [nBoard, killed] = killGroup(board, loc);
 
   expect(killed).toBe(blackMoves.length);
-  expect(isEmpty(nBoard)).toBe(true);
+  expect(isBoardEmpty(nBoard)).toBe(true);
 });
 
 test('Kill single stone group, surrounded', () => {
@@ -293,7 +277,7 @@ test('Kill single stone group, surrounded', () => {
   setColor(nBoard, whiteMoves, null);
 
   expect(killed).toBe(blackMoves.length);
-  expect(isEmpty(nBoard)).toBe(true);
+  expect(isBoardEmpty(nBoard)).toBe(true);
 });
 
 test('Kill medium stone group', () => {
@@ -308,7 +292,7 @@ test('Kill medium stone group', () => {
   let [nBoard, killed] = killGroup(board, loc);
 
   expect(killed).toBe(blackMoves.length);
-  expect(isEmpty(nBoard)).toBe(true);
+  expect(isBoardEmpty(nBoard)).toBe(true);
 });
 
 test('Kill medium stone group, surrounded', () => {
@@ -343,7 +327,7 @@ test('Kill medium stone group, surrounded', () => {
   setColor(board, whiteMoves, null);
 
   expect(killed).toBe(blackMoves.length);
-  expect(isEmpty(nBoard)).toBe(true);
+  expect(isBoardEmpty(nBoard)).toBe(true);
 });
 
 test('Kill large stone group', () => {
@@ -370,7 +354,7 @@ test('Kill large stone group', () => {
   let [nBoard, killed] = killGroup(board, loc);
 
   expect(killed).toBe(blackMoves.length);
-  expect(isEmpty(nBoard)).toBe(true);
+  expect(isBoardEmpty(nBoard)).toBe(true);
 
 });
 test('Kill large stone group, surrounded', () => {
@@ -403,9 +387,7 @@ test('Kill large stone group, surrounded', () => {
   setColor(board, whiteMoves, null);
 
   expect(killed).toBe(blackMoves.length);
-  expect(isEmpty(nBoard)).toBe(true);
+  expect(isBoardEmpty(nBoard)).toBe(true);
 });
 
-test('Normal board, dead group'){
-
-}
+test.todo('Normal board, dead group');
