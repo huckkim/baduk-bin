@@ -27,7 +27,7 @@ export class Coord {
 export function isBoardEqual(board1: Board, board2: Board): boolean {
   for (let i = 0; i < board1.length; ++i){
     for (let j = 0; j < board1.length; ++j){
-      if (board1[i][j] != board2[i][j]) return false;
+      if (board1[i][j] !== board2[i][j]) return false;
     }
   }
   return true;
@@ -96,20 +96,29 @@ export function selectGroup(board: Board, loc: Coord): Board{
  * @param board
  * @return given a board, return an array of coords for location of black and white stones
  */
-export function getCoordFromBoard(board: Array<Array<string>>) : [Array<Coord>, Array<Coord>] {
+export function getCoordFromBoard(board: Board) : [Array<Coord>, Array<Coord>] {
   let black_coords = [];
   let white_coords = [];
   for (let i = 0; i < board.length; ++i){
     for (let j = 0; j < board.length; ++j){
-      if (board[i][j] == 'X') {
+      if (board[i][j] == Color.BLACK) {
         black_coords.push(new Coord(j, i));
       }
-      else if (board[i][j] == 'O') {
+      else if (board[i][j] == Color.WHITE) {
         white_coords.push(new Coord(j, i));
       }
     }
   }
   return [black_coords, white_coords];
+}
+
+export function getStringsFromBoard(board: Board): Array<Array<string>> {
+  let nboard = [];
+  for (let i = board.length - 1; i >= 0; --i){
+    let row = board[i].map((val) => (val === null) ? '-' : ((val === Color.BLACK) ? 'X' : 'O'));
+    nboard.push(row);
+  }
+  return nboard;
 }
 
 export function getBoardFromStrings(board: Array<Array<string>>): Board{
@@ -120,6 +129,81 @@ export function getBoardFromStrings(board: Array<Array<string>>): Board{
       else if (board[i][j] == 'O') nboard[i][j] = Color.WHITE;
     }
   }
+  return nboard;
+}
+
+/**
+ * find the bordering color empty space at loc
+ * pre: board at loc == null, if both colors or none are present return null
+ * @param board 
+ * @param loc 
+ * @returns 
+ */
+export function findBorderingColor(board: Board, loc: Coord): Color | null{
+  let toVisit = [loc];
+  let visited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
+  let curr_color = null;
+  while (toVisit.length != 0) {
+    let curr = toVisit.pop();
+    if (!visited[curr.y][curr.x]) {
+      if (board[curr.y][curr.x] !== null) {
+        if (curr_color === null) curr_color = board[curr.y][curr.x];
+        else if (curr_color != board[curr.y][curr.x]) return null;
+      }
+      else {
+        if (curr.y + 1 < board.length)
+          toVisit.push(new Coord(curr.x, curr.y + 1));
+        if (curr.y - 1 >= 0)
+          toVisit.push(new Coord(curr.x, curr.y - 1));
+        if (curr.x + 1 < board.length)
+          toVisit.push(new Coord(curr.x + 1, curr.y));
+        if (curr.x - 1 >= 0)
+          toVisit.push(new Coord(curr.x - 1, curr.y));
+      }
+
+      visited[curr.y][curr.x] = true;
+    }
+  }
+  return curr_color;
+}
+
+export function setVisited(board: Board, visited: Array<Array<boolean>>, loc: Coord): Array<Array<boolean>>{
+  let toVisit = [loc];
+  let tvisited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
+  let sz = 0;
+  while (toVisit.length != 0) {
+    let curr = toVisit.pop();
+    if (!tvisited[curr.y][curr.x]) {
+      if (board[curr.y][curr.x] == null) {
+        visited[curr.y][curr.x] = true;
+        if (curr.y + 1 < board.length)
+          toVisit.push(new Coord(curr.x, curr.y + 1));
+        if (curr.y - 1 >= 0)
+          toVisit.push(new Coord(curr.x, curr.y - 1));
+        if (curr.x + 1 < board.length)
+          toVisit.push(new Coord(curr.x + 1, curr.y));
+        if (curr.x - 1 >= 0)
+          toVisit.push(new Coord(curr.x - 1, curr.y));
+      }
+      tvisited[curr.y][curr.x] = true;
+    }
+  }
+  return visited;
+}
+
+export function alphaToCoord(str: String): Coord {
+  let x = str.charCodeAt(0) - 65;
+  if (x >= 9) --x;
+  let y = str.charCodeAt(1) - 49;
+  return new Coord(x, y);
+}
+
+export function cloneBoard(board: Board): Board{
+  let nboard = []
+  board.forEach((row) => {
+    let nrow = row.map((e) => e);
+    nboard.push(nrow);
+  })
   return nboard;
 }
 
@@ -180,9 +264,9 @@ export function hasLiberties(board: Board, loc: Coord): boolean{
  * @param move 
  * @returns returns if a move is valid and if it is, the resulting board and the number of stones captured
  */
-function playMove(board: Board, curr_player: Color, move: Coord): [boolean, Board, number]{
+function playBoardMove(board: Board, curr_player: Color, move: Coord): [boolean, Board, number, string]{
   if (board[move.y][move.x] != null) 
-    return [false, board, 0];
+    return [false, board, 0, "Can't play ontop of a stone"];
   return commitPlaceAndKill(board, curr_player, move);
 }
 
@@ -194,17 +278,19 @@ function playMove(board: Board, curr_player: Color, move: Coord): [boolean, Boar
  * @returns whether the move of placing a stone of curr_player at loc is valid, and if so
  *          the new board and the number of stones killed
  */ 
-function commitPlaceAndKill(board: Board, curr_player: Color, loc: Coord): [boolean, Board, number]{
+function commitPlaceAndKill(board: Board, curr_player: Color, loc: Coord): [boolean, Board, number, string]{
   board[loc.y][loc.x] = curr_player;
-  if (hasLiberties[loc.y][loc.x]) {
+  if (hasLiberties(board, loc)) {
     let [nboard, killed] = killSurroundingGroups(board, loc);
-    return [true, nboard, killed];
+    return [true, nboard, killed, "Ok"];
   }
   else {
     let [nboard, killed] = killSurroundingGroups(board, loc);
-    if (killed == 0)
-      return [false, null, null];
-    return [true, nboard, killed];
+    if (killed == 0) {
+      board[loc.y][loc.x] = null; // reset player
+      return [false, board, 0, "Suicide is illegal"];
+    }
+    return [true, nboard, killed, "Ok"];
   }
 }
 
@@ -214,7 +300,7 @@ function commitPlaceAndKill(board: Board, curr_player: Color, loc: Coord): [bool
  * @param loc 
  * @returns new board and number of enemy stones killed
  */
-function killSurroundingGroups(board: Board, loc: Coord): [Board, number]{
+export function killSurroundingGroups(board: Board, loc: Coord): [Board, number]{
   let toVisit = [loc];
   let curr_player = board[loc.y][loc.x];
   let visisted = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
@@ -279,7 +365,7 @@ export function killGroup(board: Board, loc: Coord): [Board, number] {
 }
 
 // pre: board at loc is empty
-function findSpaceSize(board: Board, loc: Coord): number{
+export function findSpaceSize(board: Board, loc: Coord): number{
   let toVisit = [loc];
   let visited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
   let sz = 0;
@@ -308,16 +394,27 @@ function findSpaceSize(board: Board, loc: Coord): number{
  * @param board 
  * @returns return territory points for [black, white]
  */
-function calculateTerritory(board: Board) : [number, number] {
-  let toVisit = [new Coord(0, 0)];
+export function calculateTerritory(board: Board) : [number, number] {
   let visited = Array<Array<boolean>>(board.length).fill(null).map(() => { return new Array<boolean>(board.length).fill(false) });
   let black_territory = 0;
   let white_territory = 0;
-  while (toVisit.length != 0) {
-    let curr = toVisit.pop();
-    if (!visited[curr.y][curr.x]) {
-
-      visited[curr.y][curr.x] = true;
+  for (let i = 0; i < board.length; ++i){
+    for (let j = 0; j < board.length; ++j){
+      if (!visited[i][j] && board[i][j] === null) {
+        let loc = new Coord(j, i);
+        let color = findBorderingColor(board, loc);
+        let sz = findSpaceSize(board, loc);
+        if (color === Color.BLACK) {
+          black_territory += sz;
+        }
+        else if (color === Color.WHITE) {
+          white_territory += sz;
+        }
+        // else color === null => empty board / disputed areas no points
+        
+        // mark as viewed
+        setVisited(board, visited, loc);
+      }
     }
   }
   return [black_territory, white_territory];
@@ -329,7 +426,7 @@ function calculateTerritory(board: Board) : [number, number] {
  * @param handicap
  * @param komi
  */
-export default class BadukGame {
+export class BadukGame {
   board: Board;
   curr_player: Color;
   prev_board: Board | null;
@@ -344,6 +441,8 @@ export default class BadukGame {
     this.curr_player = curr_player;
     this.has_passed = false;
     this.komi = komi;
+    this.black_captures = 0;
+    this.white_captures = 0;
   }
 
   /**
@@ -351,8 +450,8 @@ export default class BadukGame {
    * @param curr_player 
    * @returns returns whether the move was valid (boolean) or a winner (color) if the game is over
    */
-  playMove(move: null | Coord, curr_player: Color): boolean | Color {
-    if (curr_player != this.curr_player) return false;
+  playMove(move: null | Coord, curr_player: Color): [boolean | [Color, number, number], string] {
+    if (curr_player != this.curr_player) return [false, "Illegal move, not players turn"];
     else if (move == null) {
       if (this.has_passed == true) {
         // THE GAME IS DONE
@@ -361,27 +460,27 @@ export default class BadukGame {
         black_score += this.black_captures;
         white_score += this.white_captures;
         white_score += this.komi;
-        return (black_score > white_score) ? Color.BLACK : Color.WHITE;
+        return [[(black_score > white_score) ? Color.BLACK : Color.WHITE, black_score, white_score], "Game over"];
       }
       else {
         this.has_passed = true;
       }
     }
     else {
-      let [valid, nboard, captures] = playMove(this.board, this.curr_player, move);
-      
+      this.has_passed = false;
+      let [valid, nboard, captures, str] = playBoardMove(this.board, this.curr_player, move);
       // invalid move
       if (!valid) {
-        return false;
+        return [false, "Illegal Move,"+str];
       }
 
-      // ko not valid move
-      if (isBoardEqual(this.prev_board, nboard)) {
-        return false;
+      // ko, not valid move
+      if (this.prev_board !== null && isBoardEqual(this.prev_board, nboard)) {
+        return [false, "Illegal Move, Ko"];
       }
 
       // update ko board
-      this.prev_board = this.board;
+      this.prev_board = cloneBoard(this.board);
 
       // update board state
       this.board = nboard;
@@ -394,6 +493,18 @@ export default class BadukGame {
     }
     // next players turn
     this.curr_player = this.curr_player == Color.BLACK ? Color.WHITE : Color.BLACK;
-    return true;
+    return [true, "Valid Move"];
+  }
+  removeGroup(loc: Coord): void{
+    if (this.board[loc.y][loc.x] === Color.BLACK) {
+      let [nboard, killed] = killGroup(this.board, loc);
+      this.white_captures += killed;
+      this.board = nboard;
+    }
+    else if (this.board[loc.y][loc.x] === Color.WHITE) {
+      let [nboard, killed] = killGroup(this.board, loc);
+      this.black_captures += killed;
+      this.board = nboard;
+    }
   }
 };

@@ -1,5 +1,4 @@
-import { createSolutionBuilderWithWatchHost } from 'typescript';
-import { isBoardEmpty, isBoardEqual, setColor, setupBoard, hasLiberties, killGroup, Board, Coord, Color, getCoordFromBoard, getBoardFromStrings } from '../src/BadukLogic'
+import { BadukGame, findSpaceSize, isBoardEmpty, isBoardEqual, setColor, setupBoard, hasLiberties, killGroup, killSurroundingGroups, Board, Coord, Color, getCoordFromBoard, getBoardFromStrings, findBorderingColor, calculateTerritory, alphaToCoord, getStringsFromBoard, cloneBoard } from '../src/BadukLogic'
 
 /** 
  *  Ensure that the setup board returns a valid board given a handicap and the proper player
@@ -107,7 +106,7 @@ test('Getting test boards list of coords', () => {
     new Coord(3, 3), new Coord(8, 3),
     new Coord(2, 4), new Coord(7, 4),
   ]
-  const [black_moves, white_moves] = getCoordFromBoard(board);
+  const [black_moves, white_moves] = getCoordFromBoard(getBoardFromStrings(board));
   expect(black_moves.sort()).toEqual(expectedBlackMoves.sort());
   expect(white_moves.sort()).toEqual(expectedWhiteMoves.sort());
 })
@@ -519,150 +518,557 @@ test.todo('Large stone group, corner, has all liberties');
 test.todo('Large stone group, corner, has no liberties');
 test.todo('Large stone group, corner, has some liberties');
 
-test.todo('Multiple groups, has all liberties');
-test.todo('Multiple groups, has no liberties');
-test.todo('Multiple groups, has some liberties');
+test('Multiple groups, has all liberties', () => {
+  const board = [
+    ['-', '-', 'X', '-', '-', '-', '-', 'O', 'O',], // 0
+    ['-', '-', 'X', '-', '-', '-', '-', 'X', 'X',], // 1
+    ['-', '-', 'X', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', 'X', '-', '-', 'O', '-', '-', '-', '-',], // 3
+    ['-', 'X', '-', 'O', 'O', 'O', 'O', '-', '-',], // 4
+    ['-', 'X', '-', 'O', '-', '-', 'O', '-', '-',], // 5
+    ['-', '-', 'O', 'O', '-', 'O', '-', 'O', 'X',], // 6
+    ['-', 'X', '-', '-', 'X', '-', '-', 'X', '-',], // 7
+    ['-', '-', '-', 'O', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+
+  expect(hasLiberties(tboard, loc)).toBe(true);
+});
+
+test('Multiple groups, has no liberties', () => {
+  const board = [
+    ['-', '-', 'X', '-', '-', '-', '-', 'O', 'O',], // 0
+    ['-', '-', 'X', '-', '-', '-', '-', 'X', 'X',], // 1
+    ['-', '-', 'X', '-', 'X', '-', '-', '-', '-',], // 2
+    ['-', 'X', '-', 'X', 'O', 'X', 'X', '-', '-',], // 3
+    ['-', 'X', 'X', 'O', 'O', 'O', 'O', 'X', '-',], // 4
+    ['-', 'X', 'X', 'O', 'X', 'X', 'O', 'X', '-',], // 5
+    ['-', 'X', 'O', 'O', 'X', 'O', 'X', '-', 'X',], // 6
+    ['-', 'X', 'X', 'X', 'X', '-', '-', 'X', '-',], // 7
+    ['-', '-', '-', 'O', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+
+  expect(hasLiberties(tboard, loc)).toBe(false);
+});
+
+test('Multiple groups, has some liberties', () => {
+  const board = [
+    ['-', '-', 'X', '-', '-', '-', '-', 'O', 'O',], // 0
+    ['-', '-', 'X', '-', '-', '-', '-', 'X', 'X',], // 1
+    ['-', '-', 'X', '-', 'X', '-', '-', '-', '-',], // 2
+    ['-', 'X', '-', 'X', 'O', 'X', 'X', '-', '-',], // 3
+    ['-', 'X', 'X', 'O', 'O', 'O', 'O', 'X', '-',], // 4
+    ['-', 'X', 'X', 'O', '-', 'X', 'O', 'X', '-',], // 5
+    ['-', 'X', 'O', 'O', 'X', 'O', 'X', '-', 'X',], // 6
+    ['-', 'X', 'X', 'X', 'X', '-', '-', 'X', '-',], // 7
+    ['-', '-', '-', 'O', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+
+  expect(hasLiberties(tboard, loc)).toBe(true);
+});
 
 test('Kill single stone group', () => {
-  const blackMoves = [new Coord(4, 4)];
-  let [board, _] = setupBoard(9, []);
-  //    
-  //   0 
-  //    
-  setColor(board, blackMoves, Color.BLACK);
-  let loc = new Coord(4, 4)
-  let [nBoard, killed] = killGroup(board, loc);
-
-  expect(killed).toBe(blackMoves.length);
-  expect(isBoardEmpty(nBoard)).toBe(true);
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const eboard = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+  let [fboard, killed] = killGroup(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(1);
 });
 
 test('Kill single stone group, surrounded', () => {
-  const blackMoves = [new Coord(4, 4)];
-  const whiteMoves = [new Coord(3, 4), new Coord(5, 4), new Coord(4, 3), new Coord(4, 5)];
-  let [board, _] = setupBoard(9, []);
-  //    X
-  //  X 0 X
-  //    X
-  setColor(board, blackMoves, Color.BLACK);
-  setColor(board, whiteMoves, Color.WHITE);
-  let loc = new Coord(4, 4)
-  let [nBoard, killed] = killGroup(board, loc);
-
-  setColor(nBoard, whiteMoves, null);
-
-  expect(killed).toBe(blackMoves.length);
-  expect(isBoardEmpty(nBoard)).toBe(true);
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', 'O', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', 'O', 'X', 'O', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', 'O', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const eboard = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', 'O', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', 'O', '-', 'O', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', 'O', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+  let [fboard, killed] = killGroup(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(1);
 });
 
 test('Kill medium stone group', () => {
-  const blackMoves = [
-    new Coord(4, 4), new Coord(4, 5), new Coord(4, 6), new Coord(4, 7), new Coord(4, 8),
-    new Coord(3, 3), new Coord(3, 4), new Coord(3, 5), new Coord(3, 6),
-  ];
-  let [board, _] = setupBoard(13, []);
-
-  setColor(board, blackMoves, Color.BLACK);
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', 'X', '-', '-', '-',], // 2
+    ['-', '-', 'X', 'X', 'X', 'X', 'X', '-', '-',], // 3
+    ['-', '-', 'X', 'X', 'X', '-', '-', '-', '-',], // 4
+    ['-', '-', 'X', '-', 'X', 'X', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const eboard = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
   let loc = new Coord(4, 4);
-  let [nBoard, killed] = killGroup(board, loc);
-
-  expect(killed).toBe(blackMoves.length);
-  expect(isBoardEmpty(nBoard)).toBe(true);
+  let [fboard, killed] = killGroup(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(12);
 });
 
 test('Kill medium stone group, surrounded', () => {
-  const blackMoves = [
-    new Coord(4, 4), new Coord(4, 5), new Coord(4, 6), new Coord(4, 7), new Coord(4, 8),
-    new Coord(3, 3), new Coord(3, 4), new Coord(3, 5), new Coord(3, 6),
-  ];
-  const whiteMoves = [
-    new Coord(3,2), new Coord(2,3), new Coord(4,3),
-    new Coord(2,4), new Coord(5,4),
-    new Coord(2,5), new Coord(5,5),
-    new Coord(2,6), new Coord(5,6),
-    new Coord(3,7), new Coord(5,7),
-    new Coord(3,8), new Coord(5,8),
-    new Coord(4,9)
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', 'O', '-', '-', '-',], // 1
+    ['-', '-', 'O', 'O', 'O', 'X', 'O', '-', '-',], // 2
+    ['-', 'O', 'X', 'X', 'X', 'X', 'X', 'O', '-',], // 3
+    ['-', 'O', 'X', 'X', 'X', 'O', 'O', '-', '-',], // 4
+    ['-', 'O', 'X', 'O', 'X', 'X', 'O', '-', '-',], // 5
+    ['-', '-', 'O', '-', 'O', 'O', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
   ]
-  let [board, _] = setupBoard(13, []);
-  //   X
-  // X O X
-  // X O O X
-  // X O O X
-  // X O O X
-  //   X O X
-  //   X O X
-  //     X
-
-  setColor(board, blackMoves, Color.BLACK);
-  setColor(board, whiteMoves, Color.WHITE);
+  const eboard = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', 'O', '-', '-', '-',], // 1
+    ['-', '-', 'O', 'O', 'O', '-', 'O', '-', '-',], // 2
+    ['-', 'O', '-', '-', '-', '-', '-', 'O', '-',], // 3
+    ['-', 'O', '-', '-', '-', 'O', 'O', '-', '-',], // 4
+    ['-', 'O', '-', 'O', '-', '-', 'O', '-', '-',], // 5
+    ['-', '-', 'O', '-', 'O', 'O', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const tboard = getBoardFromStrings(board);
   let loc = new Coord(4, 4);
-  let [nBoard, killed] = killGroup(board, loc);
-
-  setColor(board, whiteMoves, null);
-
-  expect(killed).toBe(blackMoves.length);
-  expect(isBoardEmpty(nBoard)).toBe(true);
+  let [fboard, killed] = killGroup(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(12);
 });
 
 test('Kill large stone group', () => {
-  const blackMoves = [
-    new Coord(5,0), new Coord(6,0), new Coord(7,0),
-    new Coord(5,1), new Coord(6,1), new Coord(7,1),
-    new Coord(6,2), new Coord(7,2), new Coord(8,2),
-    new Coord(7,3),
-    new Coord(7,4), new Coord(8,4), new Coord(9,4),
-    new Coord(7,5), new Coord(9,5),
-    new Coord(9,6), new Coord(10,6), new Coord(11,6),
-    new Coord(10,7), new Coord(11,7), 
-    new Coord(10,8), new Coord(11,8), 
-    new Coord(7,9), new Coord(8,9), new Coord(9,9), new Coord(10,9), new Coord(11,9), new Coord(12,9), new Coord(13,9),
-    new Coord(7,10), new Coord(8,10), new Coord(9,10), new Coord(10,10), new Coord(12,10), new Coord(13,10),
-    new Coord(8,11), new Coord(9,11), new Coord(10,11), 
-    new Coord(10,12),
-    new Coord(10,13),
-  ];
-  let [board, _] = setupBoard(19, []);
-
-  setColor(board, blackMoves, Color.BLACK);
-  let loc = new Coord(7, 3);
-  let [nBoard, killed] = killGroup(board, loc);
-
-  expect(killed).toBe(blackMoves.length);
-  expect(isBoardEmpty(nBoard)).toBe(true);
-
 });
+
 test('Kill large stone group, surrounded', () => {
-
-  const blackMoves = [
-    new Coord(5,0), new Coord(6,0), new Coord(7,0),
-    new Coord(5,1), new Coord(6,1), new Coord(7,1),
-    new Coord(6,2), new Coord(7,2), new Coord(8,2),
-    new Coord(7,3),
-    new Coord(7,4), new Coord(8,4), new Coord(9,4),
-    new Coord(7,5), new Coord(9,5),
-    new Coord(9,6), new Coord(10,6), new Coord(11,6),
-    new Coord(10,7), new Coord(11,7), 
-    new Coord(10,8), new Coord(11,8), 
-    new Coord(7,9), new Coord(8,9), new Coord(9,9), new Coord(10,9), new Coord(11,9), new Coord(12,9), new Coord(13,9),
-    new Coord(7,10), new Coord(8,10), new Coord(9,10), new Coord(10,10), new Coord(12,10), new Coord(13,10),
-    new Coord(8,11), new Coord(9,11), new Coord(10,11), 
-    new Coord(10,12),
-    new Coord(10,13),
-  ];
-  const whiteMoves = [
-  ]
-  let [board, _] = setupBoard(19, []);
-
-  setColor(board, blackMoves, Color.BLACK);
-  setColor(board, whiteMoves, Color.WHITE);
-  let loc = new Coord(7, 3);
-  let [nBoard, killed] = killGroup(board, loc);
-
-  setColor(board, whiteMoves, null);
-
-  expect(killed).toBe(blackMoves.length);
-  expect(isBoardEmpty(nBoard)).toBe(true);
 });
 
-test.todo('Normal board, dead group');
+test('Kill corner, stone group', () => {
+  const board = [
+    ['O', 'X', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['O', 'O', 'X', '-', '-', '-', '-', '-', '-',], // 1
+    ['X', 'X', '-', '-', 'O', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', 'X', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', 'X', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', 'O', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  const eboard = [
+    ['-', 'X', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', 'X', '-', '-', '-', '-', '-', '-',], // 1
+    ['X', 'X', '-', '-', 'O', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', 'X', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', 'X', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', 'O', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(0, 0);
+  let [fboard, killed] = killGroup(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(3);
+})
+
+test('Normal board, dead group', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', 'X', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', 'X', '-', 'X', 'X', 'O', 'O', 'X', '-', '-', '-'],
+    ['-', '-', 'X', '-', 'X', 'O', 'X', 'O', 'X', 'X', '-', 'O', '-'],
+    ['-', '-', 'O', 'O', 'X', 'O', 'O', 'X', 'X', '-', 'X', '-', '-'],
+    ['-', '-', '-', 'O', 'O', 'X', 'X', 'O', '-', 'X', '-', '-', '-'],
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', 'O', '-', 'O', '-', '-', '-', '-', '-', 'O', '-'],
+    ['-', '-', '-', 'O', '-', '-', '-', '-', '-', 'O', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', 'O', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'],
+  ]
+  const eboard = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'], // 0-
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'], // 1
+    ['-', '-', '-', '-', '-', 'X', '-', '-', '-', '-', '-', '-', '-'], // 2
+    ['-', '-', '-', 'X', '-', 'X', 'X', 'O', 'O', 'X', '-', '-', '-'], // 3
+    ['-', '-', 'X', '-', 'X', '-', 'X', 'O', 'X', 'X', '-', 'O', '-'], // 4
+    ['-', '-', 'O', 'O', 'X', '-', '-', 'X', 'X', '-', 'X', '-', '-'], // 5
+    ['-', '-', '-', 'O', 'O', 'X', 'X', 'O', '-', 'X', '-', '-', '-'], // 6
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-', '-', '-', '-', '-'], // 7
+    ['-', '-', '-', 'O', '-', 'O', '-', '-', '-', '-', '-', 'O', '-'], // 8
+    ['-', '-', '-', 'O', '-', '-', '-', '-', '-', 'O', '-', '-', '-'], // 9
+    ['-', '-', '-', '-', '-', '-', 'O', '-', '-', '-', '-', '-', '-'], // 10
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'], // 11
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'], // 12
+    //0    1    2    3    4    5    6    7    8    9    10   11   12
+  ]
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(5, 4);
+  let [fboard, killed] = killGroup(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(3);
+});
+
+test('kill surrounding groups single stone', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', 'X', 'O', 'X', '-', '-', '-',], // 3
+    ['-', '-', 'X', 'O', 'X', 'O', 'X', '-', '-',], // 4
+    ['-', '-', '-', 'X', 'O', 'X', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  const eboard = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', 'X', '-', 'X', '-', '-', '-',], // 3
+    ['-', '-', 'X', '-', 'X', '-', 'X', '-', '-',], // 4
+    ['-', '-', '-', 'X', '-', 'X', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+  let [fboard, killed] = killSurroundingGroups(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(4);
+});
+
+test('kill surrounding groups, larger group', () => {
+  const board = [
+    ['-', '-', 'O', 'X', 'X', 'O', '-', '-', '-',], // 0
+    ['-', '-', 'O', 'X', 'X', 'O', '-', '-', '-',], // 1
+    ['-', '-', '-', 'O', 'X', 'O', '-', '-', '-',], // 2
+    ['-', '-', 'O', 'X', 'O', 'X', 'O', '-', '-',], // 3
+    ['-', '-', 'O', 'X', 'O', 'X', 'X', 'O', '-',], // 4
+    ['-', '-', '-', 'O', 'O', 'X', 'X', 'O', '-',], // 5
+    ['-', '-', '-', '-', 'O', 'X', 'X', 'O', '-',], // 6
+    ['-', '-', '-', '-', '-', 'O', 'O', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  const eboard = [
+    ['-', '-', 'O', '-', '-', 'O', '-', '-', '-',], // 0
+    ['-', '-', 'O', '-', '-', 'O', '-', '-', '-',], // 1
+    ['-', '-', '-', 'O', '-', 'O', '-', '-', '-',], // 2
+    ['-', '-', 'O', '-', 'O', '-', 'O', '-', '-',], // 3
+    ['-', '-', 'O', '-', 'O', '-', '-', 'O', '-',], // 4
+    ['-', '-', '-', 'O', 'O', '-', '-', 'O', '-',], // 5
+    ['-', '-', '-', '-', 'O', '-', '-', 'O', '-',], // 6
+    ['-', '-', '-', '-', '-', 'O', 'O', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  const tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+  let [fboard, killed] = killSurroundingGroups(tboard, loc);
+  const cboard = getBoardFromStrings(eboard);
+  expect(isBoardEqual(fboard, cboard)).toBe(true);
+  expect(killed).toBe(14);
+});
+
+test('territory, 1 space', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', 'X', '-', 'X', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', 'X', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  let loc = new Coord(4, 4);
+  let nboard = getBoardFromStrings(board);
+  let size = findSpaceSize(nboard, loc);
+  expect(size).toBe(1);
+})
+
+test('function bordering color white', () => {
+  const board = [
+    ['-', '-', 'O', '-', '-', 'O', '-', '-', '-',], // 0
+    ['-', '-', 'O', '-', '-', 'O', '-', '-', '-',], // 1
+    ['-', '-', '-', 'O', '-', 'O', '-', '-', '-',], // 2
+    ['-', '-', 'O', '-', 'O', '-', 'O', '-', '-',], // 3
+    ['-', '-', 'O', '-', 'O', '-', '-', 'O', '-',], // 4
+    ['-', '-', '-', 'O', 'O', '-', '-', 'O', '-',], // 5
+    ['-', '-', '-', '-', 'O', '-', '-', 'O', '-',], // 6
+    ['-', '-', '-', '-', '-', 'O', 'O', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ];
+  let tboard = getBoardFromStrings(board);
+  let loc = new Coord(5, 5);
+  let color = findBorderingColor(tboard, loc);
+  expect(color).toBe(Color.WHITE);
+});
+
+test('function bordering color black, center', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', 'O', '-', '-',], // 0
+    ['-', 'O', '-', '-', '-', 'X', 'O', '-', '-',], // 1
+    ['-', '-', 'X', 'X', 'X', '-', 'X', 'O', '-',], // 2
+    ['-', 'X', '-', '-', '-', '-', '-', 'X', 'O',], // 3
+    ['-', 'X', '-', '-', '-', 'X', 'X', '-', '-',], // 4
+    ['-', 'X', '-', 'X', '-', '-', 'X', '-', '-',], // 5
+    ['-', '-', 'X', '-', 'X', 'X', '-', '-', '-',], // 6
+    ['-', 'O', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  let tboard = getBoardFromStrings(board);
+  let loc = new Coord(4, 4);
+  let color = findBorderingColor(tboard, loc);
+  expect(color).toBe(Color.BLACK);
+});
+
+test('function bordering color white, corner', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', 'O', '-', '-',], // 0
+    ['-', 'O', '-', '-', '-', 'X', 'O', '-', '-',], // 1
+    ['-', '-', 'X', 'X', 'X', '-', 'X', 'O', '-',], // 2
+    ['-', 'X', '-', '-', '-', '-', '-', 'X', 'O',], // 3
+    ['-', 'X', '-', '-', '-', 'X', 'X', '-', '-',], // 4
+    ['-', 'X', '-', 'X', '-', '-', 'X', '-', '-',], // 5
+    ['-', '-', 'X', '-', 'X', 'X', '-', '-', '-',], // 6
+    ['-', 'O', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  let tboard = getBoardFromStrings(board);
+  let loc = new Coord(8, 0);
+  let color = findBorderingColor(tboard, loc);
+  expect(color).toBe(Color.WHITE);
+});
+
+test('calculate basic territory', () => {
+  const board = [
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', 'X', 'O', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  let tboard = getBoardFromStrings(board);
+  let [black_territory, white_territory] = calculateTerritory(tboard);
+  expect(black_territory).toBe(36);
+  expect(white_territory).toBe(27);
+})
+
+test('create new game, no handicap, correct state', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const eboard = getBoardFromStrings(board);
+  let game = new BadukGame(9, [], 6.5);
+  expect(game.curr_player).toBe(Color.BLACK);
+  expect(game.has_passed).toBe(false);
+  expect(game.prev_board).toBe(null);
+  expect(game.black_captures).toBe(0);
+  expect(game.white_captures).toBe(0);
+  expect(isBoardEqual(game.board, eboard)).toBe(true);
+});
+
+test('create new game, with handicap, correct state', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', 'X', '-', '-', '-', 'X', '-', '-',], // 2
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 5
+    ['-', '-', 'X', '-', '-', '-', 'X', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const eboard = getBoardFromStrings(board);
+  const [black_coords,] = getCoordFromBoard(eboard);
+  let game = new BadukGame(9, black_coords, 6.5);
+  expect(game.curr_player).toBe(Color.WHITE);
+  expect(game.has_passed).toBe(false);
+  expect(game.prev_board).toBe(null);
+  expect(game.black_captures).toBe(0);
+  expect(game.white_captures).toBe(0);
+  expect(isBoardEqual(game.board, eboard)).toBe(true);
+});
+
+test('play game, single move, change next player', () => {
+  let game = new BadukGame(9, [], 0.5);
+  expect(game.curr_player).toBe(Color.BLACK);
+  let [valid1, ] = game.playMove(alphaToCoord("D5"), game.curr_player)
+  expect(valid1).toBe(true);
+  expect(game.curr_player).toBe(Color.WHITE);
+  let [valid2, ] = game.playMove(alphaToCoord("G7"), game.curr_player)
+  expect(valid2).toBe(true);
+})
+
+test('play full game, expect correct score', () => {
+  let game = new BadukGame(9, [], 0);
+  // https://online-go.com/game/697808 + endgame moves
+  const moves = [
+    "E5", "C7", "C6", "B6", "D7", "D8", "D6", "B8", "B5", "F7",
+    "A6", "B7", "G7", "F8", "F6", "E3", "D2", "D3", "C3", "E2",
+    "G3", "C2", "B2", "D1", "B3", "G2", "H2", "F3", "H3", "H1",
+    "G8", "G4", "H4", "G5", "H5", "F4", "G9", "G6", "H6", "D4",
+    "C4", "F9", "B9", "C8", "D9", "E8", "B1", "C1", "A7", "A8",
+    "A5", "C9", "J2",
+    "G1" // endgame move from white
+  ];
+  for (let i = 0; i < moves.length; ++i){
+    let [valid, ] = game.playMove(alphaToCoord(moves[i]), game.curr_player)
+    expect(valid).toBe(true);
+  }
+  console.log(getStringsFromBoard(game.board))
+  game.removeGroup(alphaToCoord("B9"));
+  game.removeGroup(alphaToCoord("D9"));
+  expect(game.black_captures).toBe(0);
+  expect(game.white_captures).toBe(3);
+  game.playMove(null, game.curr_player);
+  let [res, ] =  game.playMove(null, game.curr_player);
+  let [winner, black_score, white_score] = <[Color, number, number]>res;
+  expect(winner).toBe(Color.BLACK);
+  expect(black_score).toBe(15);
+  expect(white_score).toBe(11);
+});
+
+test('start game, invalid ko move', () => {
+});
+
+test('start game, invalid suicide move', () => {
+
+});
+
+test('alpha to coord 9x9 test', () => {
+  expect(alphaToCoord("A1")).toStrictEqual(new Coord(0, 0));
+  expect(alphaToCoord("B6")).toStrictEqual(new Coord(1, 5));
+  expect(alphaToCoord("C3")).toStrictEqual(new Coord(2, 2));
+  expect(alphaToCoord("D2")).toStrictEqual(new Coord(3, 1));
+  expect(alphaToCoord("H9")).toStrictEqual(new Coord(7, 8));
+  // For some reason North American Go board coordinates omit I
+  // probably because it looks like a 1
+  expect(alphaToCoord("J7")).toStrictEqual(new Coord(8, 6));
+});
+
+test('clone board', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', 'X', '-', '-', '-', 'X', '-', '-',], // 2
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 3
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 4
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 5
+    ['-', '-', 'X', '-', '-', '-', 'X', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  let tboard = getBoardFromStrings(board);
+  let copyboard = cloneBoard(tboard);
+  copyboard[0][0] = Color.WHITE;
+  expect(tboard[0][0]).toBe(null);
+
+  tboard[0][0] = Color.BLACK;
+  expect(copyboard[0][0]).toBe(Color.WHITE);
+})
