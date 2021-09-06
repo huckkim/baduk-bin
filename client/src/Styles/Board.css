@@ -1,6 +1,6 @@
 .baduk-board {
     position: relative;
-    background-image: url('./kaya.png');
+    background-image: url('kaya.png');
     border: .25em solid #CA933A;
     top: 0;
     left: 0;
@@ -15,11 +15,11 @@
 }
 
 .baduk-stone.baduk-stone-1 {
-    background-image: url('./stone_black.svg');
+    background-image: url('stone_black.svg');
 }
 
 .baduk-stone.baduk-stone--1 {
-    background-image: url('./stone_white.svg');
+    background-image: url('stone_white.svg');
 }
 
 .baduk-stone.baduk-stone-0 {

@@ -1,0 +1,4 @@
+.main-screen {
+    display: flex;
+    justify-content: space-around;
+}

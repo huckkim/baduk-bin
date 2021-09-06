@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 interface BadukBoardProps {
   board: Array<Array<number>>;
   boxSize: number;
@@ -19,7 +17,6 @@ interface VertexProps{
   board: Array<Array<number>>;
   x: number;
   y: number;
-  val: number; // '-' - empty   'X' - Black   'O' - White
   marker: string;
   boxSize: number;
   vertexOnClick: any;
@@ -88,17 +85,16 @@ const Grid = (props: GridLineProps) => {
 };
 
 const Vertex = (props: VertexProps) => {
-  const [val, setVal] = useState(props.val);
   return (
     <div
       onClick={() => {
-        setVal(props.vertexOnClick());
+        props.vertexOnClick(props.x, props.y);
       }}
-      key={props.x + '-' + props.y}
-      className={"baduk-stone baduk-stone-" + val}
+      key={props.x + '-' + props.y+'-'+props.board[props.y][props.x]}
+      className={"baduk-stone baduk-stone-" + props.board[props.y][props.x]}
       style={{
-        top: props.boxSize*props.y+'em',
-        left: props.boxSize*props.x+'em',
+        top: props.boxSize*props.y +'em',
+        left: props.boxSize*props.x +'em',
         width: props.boxSize + 'em',
         height: props.boxSize + 'em',
       }}
@@ -109,7 +105,6 @@ const Vertex = (props: VertexProps) => {
 
 const arrRange = (start: number, len: number) =>
   Array.from(new Array(len), (x, i) => i);
-
 
 const BadukBoard = (props: BadukBoardProps) => {
   // relative X and Y positions
@@ -128,8 +123,7 @@ const BadukBoard = (props: BadukBoardProps) => {
         length={props.board.length}
         width={props.board[0].length}
         xyrange={xyrange}
-        relX={relX}
-        relY={relY}
+        relX={relX} relY={relY}
         boxSize={props.boxSize}
       />
 
@@ -140,9 +134,7 @@ const BadukBoard = (props: BadukBoardProps) => {
             <Vertex
               board={props.board}
               key={x + '-' + y}
-              x={x}
-              y={y}
-              val={props.board[y][x]}
+              x={x} y={y}
               marker=""
               boxSize={props.boxSize}
               vertexOnClick={props.vertexOnClick}
