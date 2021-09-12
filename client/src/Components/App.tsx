@@ -28,7 +28,7 @@ const App = () => {
       toast(msg);
     });
 
-    newSocket.on("GAME_STARTED", (board: Array<Array<number>>, ) => {
+    newSocket.on("GAME_STARTED", (board: Array<Array<number>>,) => {
       setBoard(board);
       toast("Game Started!")
     })
@@ -45,6 +45,10 @@ const App = () => {
       setTheirColor(1);
     })
 
+    newSocket.on("GAME_END", (winner, bscore, wscore, msg) => {
+      toast((winner === 1 ? "Black" : "White") + "wins by "+ Math.abs(bscore-wscore)+" points!")
+    })
+
     return () => { newSocket.close() };
   }, [setSocket]);
 
@@ -54,7 +58,7 @@ const App = () => {
         <BadukBoard
           board={board}
           boxSize={2} 
-          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y) }}/>
+          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false) }}/>
         <CaptureDisplay
           boxSize={2}
           my_color={my_color}
@@ -64,7 +68,7 @@ const App = () => {
         <button onClick={() => { socket.emit("START_GAME"); }}>
           Start Game
         </button>
-        <button onClick={() => { socket.emit("PASS_MOVE")}}>Pass</button>
+        <button onClick={() => { socket.emit("PLAY_MOVE", 0, 0, true)}}>Pass</button>
       </div>
       <ToastContainer
         position="bottom-right"
