@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "strictNullChecks": false,
+        "esModuleInterop": true,
+    },
+    "include":[
+        "src/"
+    ]
+}
