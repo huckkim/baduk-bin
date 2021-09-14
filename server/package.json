@@ -2,10 +2,12 @@
     "name": "baduk-mega-server",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
+    "main": "server.js",
     "scripts": {
         "test": "jest",
-        "dev": "nodemon src/server.ts"
+        "build": "webpack --config webpack.development.js",
+        "build-prod": "webpack --config webpack.production.js",
+        "dev": "nodemon dist/server.js"
     },
     "author": "Huck",
     "license": "ISC",
