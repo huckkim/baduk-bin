@@ -18,4 +18,4 @@ open the client folder and run
 Open two instances of `localhost:3000` and press the Start Game button
 
 # TODO
-Too much
+Too much, check Projects/BadukBin on github to get an idea.
