@@ -1,12 +1,9 @@
 import express from "express";
 import http from "http";
 import { Server } from "socket.io"
-import { BadukGameManager } from "./BoardLogic/BadukGame"
 import cors from 'cors'
-import { ApolloServer } from "apollo-server"
 
-import resolvers from './resolvers';
-import entities from './type-defs';
+import RoomManager from "./Rooms/RoomManager";
 
 // Configure Database
 
@@ -40,59 +37,36 @@ server.listen(port, () => {
   console.log("server listening on port", port);
 });
 
-router.get('/basicTest', async (req, res) =>{
-  res.send('/basicTest')
-});
+const room_manager = new RoomManager(io);
 
-var game = new BadukGameManager(io);
-var clients = [];
-
+/**
+ *  Socket.IO Room + Game Management 
+ *    - RoomManager stores instances of GameRoom
+ *    - GameRoom takes in players and manages game states
+ */
 // Starting point for users
 io.on('connection', (socket) => {
   console.log("Connection established with:", socket.id)
-  // Add Socket to list of clients
-  clients.push(socket);
+  // Create a new game
+  // - size of board
+  // - handicap for black
+  // - game creator color: black, white, random
+  socket.on('CREATE_GAME', (size: string, handicap: string, color: string) => {
+    room_manager.createNewGame(socket, 19, []);
+  });
 
-  socket.on("JOIN_GAME", () => {
+  socket.on('JOIN_GAME', (roomID: string) => {
 
   });
 
-  socket.on("PLAY_MOVE", (x: string, y: string, pass: boolean) => {
-    if (!game.has_started) {
-      console.log("Game not started");
-      socket.emit("ERROR", "Game not started");
-    }
-    else {
-      console.log("Move", x, y, "entered");
-      if (pass) 
-        game.pass(socket);
-      else {
-        game.playMove(socket, parseInt(x), parseInt(y));
-      }
-    }
+  // Create a study room
+  socket.on('CREATE_STUDY', () => {
+
   });
 
-  socket.on("START_GAME", () => {
-    if (clients.length < 2) {
-      console.log("Not enough players");
-      socket.emit("ERROR", "Not enough players");
-    }
-    else {
-      console.log("Staring game");
-      game.addBlack(clients[0]);
-      game.addWhite(clients[1]);
-      game.startGame();
-    }
-  })
-
-  socket.on("disconnect", () => {
-    console.log("Connection lost with:", socket.id);
-    let i = clients.indexOf(socket);
-    if (i > -1) {
-      clients.splice(i, 1);
-    }
-    console.log(clients.length)
-  })
+  socket.on('JOIN_STUDY', () => {
+  
+  });
 });
 
 if(module.hot){

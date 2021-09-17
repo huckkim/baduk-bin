@@ -65,8 +65,10 @@ const App = () => {
           captures={[black_captures, white_captures]}
           name={['Anon', 'Anon']}
           online={[true, true]}
-        />        
-
+        />
+        <button onClick={() => { socket.emit("CREATE_GAME"); }}>
+          Test
+        </button>
         <button onClick={() => { socket.emit("START_GAME"); }}>
           Start Game
         </button>
