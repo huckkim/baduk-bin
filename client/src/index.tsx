@@ -4,7 +4,8 @@ import App from './Components/App'
 
 import './Styles/Board.css'
 import './Styles/App.css'
-import './Styles/CaptureDisplay.css'
+import './Styles/PlayerDisplay.css'
+import './Styles/Sidebar.css'
 
 ReactDOM.render(
   <React.StrictMode>

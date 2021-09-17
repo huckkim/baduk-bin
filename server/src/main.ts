@@ -8,7 +8,23 @@ import { ApolloServer } from "apollo-server"
 import resolvers from './resolvers';
 import entities from './type-defs';
 
+// Configure Database
+
+// Configure API
+
+//  - GET newGame 
+//    in: size, handicap, color, 
+//   out: socket game room id
+// internally a new room will be created that has as game manager
+// the room will keep track of the state of the game and when it is done
+// save the game to the database
+
+//  - GET game
+//    in: url / id
+//   out: redirct to socket room?
+
 const app = express();
+const router = express.Router();
 const server = new http.Server(app);
 const io = new Server(server, {
   cors: {
@@ -22,6 +38,10 @@ app.use(cors());
 
 server.listen(port, () => {
   console.log("server listening on port", port);
+});
+
+router.get('/basicTest', async (req, res) =>{
+  res.send('/basicTest')
 });
 
 var game = new BadukGameManager(io);

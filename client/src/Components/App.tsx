@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import BadukBoard from "./Board"
-import CaptureDisplay from "./CaptureDisplay"
+import Sidebar from "./Sidebar"
 import io, { Socket } from 'socket.io-client'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -58,13 +58,15 @@ const App = () => {
         <BadukBoard
           board={board}
           boxSize={2} 
-          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false) }}/>
-        <CaptureDisplay
-          boxSize={2}
-          my_color={my_color}
-          their_color={their_color}
-          blackCaptures={black_captures}
-          whiteCaptures={white_captures} />
+          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false) }}
+        />
+        <Sidebar
+          color={my_color}
+          captures={[black_captures, white_captures]}
+          name={['Anon', 'Anon']}
+          online={[true, true]}
+        />        
+
         <button onClick={() => { socket.emit("START_GAME"); }}>
           Start Game
         </button>

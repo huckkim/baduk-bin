@@ -1,0 +1,43 @@
+.captures-display {
+  background-repeat: no-repeat;
+  background-size: contain;
+  position: absolute;
+  z-index: 1;
+}
+
+.capture-display .capture-stone-1 {
+  background-image: url('stone_black.svg');
+}
+
+.capture-display .capture-stone--1 {
+  background-image: url('stone_white.svg');
+}
+
+.player-display{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.player-detail-display{
+  display: flex;
+  justify-content: left;
+  align-items: flex-end;
+}
+
+.player-detail-display .stone-1{
+  background-image: url('stone_black.svg');
+  background-repeat: no-repeat;
+  width: 43;
+  height: 43;
+}
+.player-detail-display .stone-0{
+  background-repeat: no-repeat;
+}
+
+.player-detail-display .stone--1{
+  background-image: url('stone_white.svg');
+  background-repeat: no-repeat;
+  width: auto;
+  height: auto;
+}
