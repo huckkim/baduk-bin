@@ -24,6 +24,10 @@ const App = () => {
       setBoard(board);
     });
 
+    newSocket.on('ROOM_ID', (roomId: string) => {
+      console.log('ROOM_ID')
+    })
+
     newSocket.on("ERROR", (msg: string) => {
       toast(msg);
     });

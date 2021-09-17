@@ -1,28 +1,51 @@
-import { randomUUID } from "crypto";
 import { Server, Socket } from "socket.io";
-import { Coord } from './../shared/types'
-import {v4 as uuidv4 } from 'uuid'
 import BadukGameRoom from './BadukGameRoom'
+import {v4 as uuidv4 } from 'uuid'
 
-class RoomManager {
-  server: Server;
-  rooms: Map<string, BadukGameRoom>
-  constructor(server: Server){
-    this.server = server;
-    this.rooms = new Map();
-  }
+const RoomManager = (io: Server) => {
+  const rooms: Map<string, BadukGameRoom> = new Map();
 
-  createNewGame(socket: Socket, size: number, handicap: Array<Coord>){
-    // create a new room and emit id to socket
-    const roomID = uuidv4();
-    this.rooms.set(roomID, new BadukGameRoom(this.server, roomID));
-    socket.join(roomID);
-  }
+  io.on('connection', (socket: Socket) => {
+    console.log("Connection established with:", socket.id)
+    // Create a new game
+    // - size of board
+    // - handicap for black
+    // - game creator color: black, white, random
+    socket.on('CREATE_GAME', (size: string, handicap: Array<Array<string>>, color: string) => {
+      const roomID = uuidv4();
+      const game_state = new BadukGameRoom(io, roomID);
+      socket.join(roomID);
+      if (color == 'black') {
+        game_state.addBlack(socket);
+      } else if (color == 'white') {
+        game_state.addWhite(socket);
+      }
+      else {
+        game_state.addRandom(socket);
+      }
+      rooms.set(roomID, game_state);
+      socket.emit('ROOM_ID', roomID);
+    });
 
-  joinGame(socket: Socket, roomID: string) {
-    this.rooms[roomID];
-  }
+    socket.on('JOIN_GAME', (roomID: string) => {
+      const game_state = rooms.get(roomID);
+      socket.join(roomID);
+      game_state.addOther(socket);
+    })
+
+    socket.on('PLAY_MOVE', (x: string, y: string, pass: boolean, roomID: string) => {
+      const game_state = rooms.get(roomID);
+      if (pass) {
+        game_state.playPass(socket);
+      }
+      else {
+        game_state.playMove(socket, parseInt(x), parseInt(y));
+      }
+    });
+  });
 };
+
+export default RoomManager;
 
 /*
   socket.on("PLAY_MOVE", (x: string, y: string, pass: boolean) => {
@@ -62,4 +85,3 @@ class RoomManager {
     console.log(clients.length)
   })
   */
-export default RoomManager;

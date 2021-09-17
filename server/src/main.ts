@@ -37,37 +37,14 @@ server.listen(port, () => {
   console.log("server listening on port", port);
 });
 
-const room_manager = new RoomManager(io);
 
 /**
  *  Socket.IO Room + Game Management 
  *    - RoomManager stores instances of GameRoom
  *    - GameRoom takes in players and manages game states
  */
-// Starting point for users
-io.on('connection', (socket) => {
-  console.log("Connection established with:", socket.id)
-  // Create a new game
-  // - size of board
-  // - handicap for black
-  // - game creator color: black, white, random
-  socket.on('CREATE_GAME', (size: string, handicap: string, color: string) => {
-    room_manager.createNewGame(socket, 19, []);
-  });
-
-  socket.on('JOIN_GAME', (roomID: string) => {
-
-  });
-
-  // Create a study room
-  socket.on('CREATE_STUDY', () => {
-
-  });
-
-  socket.on('JOIN_STUDY', () => {
-  
-  });
-});
+// SOcket IO Room Manager
+RoomManager(io);
 
 if(module.hot){
   module.hot.accept();
