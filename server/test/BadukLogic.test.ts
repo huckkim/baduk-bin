@@ -954,17 +954,13 @@ test.only('start game, invalid ko move', () => {
   expect(game.curr_player = Color.BLACK);
   let [valid1,] = game.playMove(new Coord(4, 4), game.curr_player);
   expect(valid1).toBe(true);
-  console.log(getStringsFromBoard(game.prev_board));
 
   expect(game.curr_player).toBe(Color.WHITE);
   let [valid2,] = game.playMove(new Coord(3, 4), game.curr_player);
   expect(valid2).toBe(true);
-  console.log(getStringsFromBoard(game.prev_board))
-
 
   expect(game.curr_player = Color.BLACK);
   let [valid3,] = game.playMove(new Coord(4, 4), game.curr_player);
-  console.log(getStringsFromBoard(game.prev_board))
   expect(valid3).toBe(false);
 
 });

@@ -42,6 +42,10 @@ const RoomManager = (io: Server) => {
         game_state.playMove(socket, parseInt(x), parseInt(y));
       }
     });
+
+    socket.on('REMOVE_GROUP', (pain: any) => {
+      console.log(pain);
+    });
   });
 };
 

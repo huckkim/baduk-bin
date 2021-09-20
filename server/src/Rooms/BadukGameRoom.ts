@@ -78,13 +78,17 @@ export class BadukGameRoom{
       socket.emit('ERROR', 'You are not a player');
     }
 
-    // Handle removing groups
-
     if (this.game.is_over) {
+      // Handle removing groups
+      this.server.to(this.roomID).emit("REMOVE_GROUPS");
+
       let [black_score, white_score, msg] = this.game.calculateTerritory();
       console.log("Game ended: ", msg);
       let winner = (black_score > white_score) ? 1 : -1;
-      this.server.emit("GAME_END", winner, black_score, white_score, msg);
+      this.server.to(this.roomID).emit("GAME_END", winner, black_score, white_score, msg);
+    }
+    else {
+      this.server.to(this.roomID).emit("PASS_MOVE");
     }
   }
 }

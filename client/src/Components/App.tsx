@@ -76,7 +76,9 @@ const App = () => {
         <button onClick={() => { socket.emit("START_GAME"); }}>
           Start Game
         </button>
-        <button onClick={() => { socket.emit("PLAY_MOVE", 0, 0, true)}}>Pass</button>
+        <button onClick={() => { socket.emit("PLAY_MOVE", 0, 0, true) }}>
+          Pass
+        </button>
       </div>
       <ToastContainer
         position="bottom-right"
