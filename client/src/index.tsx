@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import HomeScreen from './Components/Home'
 import App from './Components/App'
+import HomeNavbar from './Components/HomeNavBar'
 
 import './Styles/Board.css'
 import './Styles/App.css'
@@ -12,8 +12,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 ReactDOM.render(
   <React.StrictMode>
-    <HomeScreen></HomeScreen>
-      <App></App>
+    <HomeNavbar></HomeNavbar>
+    <App></App>
   </React.StrictMode>,
   document.getElementById('root')
 );
