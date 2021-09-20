@@ -1,6 +1,8 @@
 import {Board, Coord, Color } from '../src/shared/types'
 import { isBoardEmpty, isBoardEqual, setColor, getCoordFromBoard, getBoardFromStrings, findBorderingColor, alphaToCoord, getStringsFromBoard, cloneBoard } from '../src/BoardLogic/helper'
-import { BadukGame, findSpaceSize,  setupBoard, hasLiberties, killGroup, killSurroundingGroups,   calculateTerritory, } from '../src/BoardLogic/BadukGame'
+import BadukGame from '../src/BoardLogic/BadukGame'
+import { findSpaceSize,  setupBoard, hasLiberties, killGroup, killSurroundingGroups,   calculateTerritory, } from '../src/BoardLogic/BadukGame'
+import exp from 'constants';
 
 /** 
  *  Ensure that the setup board returns a valid board given a handicap and the proper player
@@ -924,14 +926,46 @@ test('play full game, expect correct score', () => {
   expect(game.black_captures).toBe(0);
   expect(game.white_captures).toBe(3);
   game.playMove(null, game.curr_player);
-  let [res, ] =  game.playMove(null, game.curr_player);
-  let [winner, black_score, white_score] = <[Color, number, number]>res;
+  game.playMove(null, game.curr_player);
+  let [black_score, white_score, msg] = game.calculateTerritory();
+  const winner = black_score > white_score ? Color.BLACK : Color.WHITE;
   expect(winner).toBe(Color.BLACK);
   expect(black_score).toBe(15);
   expect(white_score).toBe(11);
 });
 
-test('start game, invalid ko move', () => {
+test.only('start game, invalid ko move', () => {
+  const board = [
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 2
+    ['-', '-', '-', 'X', 'O', '-', '-', '-', '-',], // 3
+    ['-', '-', 'X', 'O', '-', 'O', '-', '-', '-',], // 4
+    ['-', '-', '-', 'X', 'O', '-', '-', '-', '-',], // 5
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 6
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 7
+    ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 8
+    //0    1    2    3    4    5    6    7    8
+  ]
+  const eboard = getBoardFromStrings(board);
+  let game = new BadukGame(9, [], 0);
+  game.board = eboard;
+
+  expect(game.curr_player = Color.BLACK);
+  let [valid1,] = game.playMove(new Coord(4, 4), game.curr_player);
+  expect(valid1).toBe(true);
+  console.log(getStringsFromBoard(game.prev_board));
+
+  expect(game.curr_player).toBe(Color.WHITE);
+  let [valid2,] = game.playMove(new Coord(3, 4), game.curr_player);
+  expect(valid2).toBe(true);
+  console.log(getStringsFromBoard(game.prev_board))
+
+
+  expect(game.curr_player = Color.BLACK);
+  let [valid3,] = game.playMove(new Coord(4, 4), game.curr_player);
+  console.log(getStringsFromBoard(game.prev_board))
+  expect(valid3).toBe(false);
 
 });
 

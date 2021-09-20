@@ -63,14 +63,12 @@ export class BadukGameRoom{
     if (color === null) {
       socket.emit('ERROR', 'You are not a player');
     }
+    let [res, msg] = this.game.playMove(new Coord(x, y), color);
+    if (res){
+      this.server.to(this.roomID).emit("UPDATE_BOARD", getNumsFromBoard(this.game.board), this.game.black_captures, this.game.white_captures, msg)
+    }
     else {
-      let [res, msg] = this.game.playMove(new Coord(x, y), color);
-      if (res){
-        this.server.to(this.roomID).emit("UPDATE_BOARD", getNumsFromBoard(this.game.board), this.game.black_captures, this.game.white_captures, msg)
-      }
-      else {
-        socket.emit('ERROR', msg);
-      }
+      socket.emit('ERROR', msg);
     }
   }
 
@@ -81,30 +79,14 @@ export class BadukGameRoom{
     }
 
     // Handle removing groups
-    var [res, msg] = this.game.playMove(null, color);
 
-  }
-
-  /*
-  pass(socket) {
-    var [res, msg] = this.game.playMove(null, (socket.id === this.black_client.id) ? Color.BLACK : Color.WHITE);
-    if (typeof res !== "boolean") {
-      console.log("Game ended");
-      console.log(res, msg)
-      let [winner, black_score, white_score] = res;
-      this.server.emit("GAME_END", winner === Color.BLACK ? 1 : -1, black_score, white_score, msg);
-    }
-    else {
-      // Valid move
-      if (res) {
-        this.server.emit("UPDATE_BOARD", getNumsFromBoard(this.game.board), this.game.black_captures, this.game.white_captures, msg);
-      }
-      else {
-        socket.emit("ERROR", msg);
-      }
+    if (this.game.is_over) {
+      let [black_score, white_score, msg] = this.game.calculateTerritory();
+      console.log("Game ended: ", msg);
+      let winner = (black_score > white_score) ? 1 : -1;
+      this.server.emit("GAME_END", winner, black_score, white_score, msg);
     }
   }
-  */
 }
 
 export default BadukGameRoom;

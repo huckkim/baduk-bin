@@ -232,6 +232,7 @@ export default class BadukGame {
   is_over: boolean;
   black_territory: number;
   white_territory: number;
+  ko_board: Board | null;
   
   constructor(size: number, handicap: Array<Coord>, komi: number) {
     let [board, curr_player] = setupBoard(size, handicap);
@@ -243,6 +244,7 @@ export default class BadukGame {
     this.black_captures = 0;
     this.white_captures = 0;
     this.is_over = false;
+    this.ko_board = null;
   }
 
   /**
@@ -250,19 +252,14 @@ export default class BadukGame {
    * @param curr_player 
    * @returns returns whether the move was valid (boolean) or a winner (color) if the game is over
    */
-  playMove(move: null | Coord, curr_player: Color): [boolean | [Color, number, number], string] {
+  playMove(move: null | Coord, curr_player: Color): [boolean | null, string] {
     if (curr_player != this.curr_player) return [false, "Illegal move, not your turn"];
     else if (move == null) {
       if (this.has_passed == true) {
         // THE GAME IS DONE
         // Calculate winner
         this.is_over = true;
-        [this.black_territory, this.white_territory] = calculateTerritory(this.board);
-
-        let black_score = this.black_captures + this.black_territory;
-        let white_score = this.white_captures + this.white_territory;
-        white_score += this.komi; // add Komi for white
-        return [[(black_score > white_score) ? Color.BLACK : Color.WHITE, black_score, white_score], "Game over"];
+        return [null, "Player has passed"];
       }
       else {
         this.has_passed = true;
@@ -277,9 +274,10 @@ export default class BadukGame {
       }
 
       // ko, not valid move
-      if (this.prev_board !== null && isBoardEqual(this.prev_board, nboard)) {
+      if (this.ko_board !== null && isBoardEqual(this.ko_board, nboard)) {
         return [false, "Illegal Move, Ko"];
       }
+      this.ko_board = this.prev_board === null ? null : cloneBoard(this.prev_board);
 
       // update ko board
       this.prev_board = cloneBoard(this.board);
@@ -297,6 +295,16 @@ export default class BadukGame {
     this.curr_player = this.curr_player == Color.BLACK ? Color.WHITE : Color.BLACK;
     return [true, "Valid Move"];
   }
+
+  calculateTerritory() : [number, number, string]{
+    [this.black_territory, this.white_territory] = calculateTerritory(this.board);
+
+    let black_score = this.black_captures + this.black_territory;
+    let white_score = this.white_captures + this.white_territory;
+    white_score += this.komi; // add Komi for white
+    return [black_score, white_score, "Game over"];
+  }
+
   removeGroup(loc: Coord): void{
     if (this.board[loc.y][loc.x] === Color.BLACK) {
       let [nboard, killed] = killGroup(this.board, loc);
