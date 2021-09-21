@@ -13,6 +13,7 @@ const App = () => {
   const [white_captures, setWhiteCaptures] = useState(0);
   const [my_color, setMyColor] = useState(0);
   const [their_color, setTheirColor] = useState(0);
+  const [roomID, setRoomID] = useState("");
 
   useEffect(() => {
     const newSocket = io(`localhost:2567`);
@@ -25,7 +26,8 @@ const App = () => {
     });
 
     newSocket.on('ROOM_ID', (roomId: string) => {
-      console.log('ROOM_ID')
+      setRoomID(roomId);
+      console.log('ROOM_ID:', roomID)
     })
 
     newSocket.on("ERROR", (msg: string) => {
@@ -62,7 +64,7 @@ const App = () => {
         <BadukBoard
           board={board}
           boxSize={2} 
-          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false) }}
+          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false, roomID) }}
         />
         <Sidebar
           color={my_color}
@@ -70,15 +72,6 @@ const App = () => {
           name={['Anon', 'Anon']}
           online={[true, true]}
         />
-        <button onClick={() => { socket.emit("CREATE_GAME"); }}>
-          Test
-        </button>
-        <button onClick={() => { socket.emit("START_GAME"); }}>
-          Start Game
-        </button>
-        <button onClick={() => { socket.emit("PLAY_MOVE", 0, 0, true) }}>
-          Pass
-        </button>
       </div>
       <ToastContainer
         position="bottom-right"

@@ -12,6 +12,7 @@ const RoomManager = (io: Server) => {
     // - handicap for black
     // - game creator color: black, white, random
     socket.on('CREATE_GAME', (size: string, handicap: Array<Array<string>>, color: string) => {
+      console.log("creating game")
       const roomID = uuidv4();
       const game_state = new BadukGameRoom(io, roomID);
       socket.join(roomID);
@@ -29,17 +30,28 @@ const RoomManager = (io: Server) => {
 
     socket.on('JOIN_GAME', (roomID: string) => {
       const game_state = rooms.get(roomID);
-      socket.join(roomID);
-      game_state.addOther(socket);
+      if (game_state !== undefined) {
+        socket.join(roomID);
+        game_state.addOther(socket);
+        game_state.startGame();
+      }
+      else {
+        socket.emit('ERROR', "No game with roomID exists");
+      }
     })
 
     socket.on('PLAY_MOVE', (x: string, y: string, pass: boolean, roomID: string) => {
       const game_state = rooms.get(roomID);
-      if (pass) {
-        game_state.playPass(socket);
+      if (game_state !== undefined) {
+        if (pass) {
+          game_state.playPass(socket);
+        }
+        else {
+          game_state.playMove(socket, parseInt(x), parseInt(y));
+        }
       }
       else {
-        game_state.playMove(socket, parseInt(x), parseInt(y));
+        socket.emit('ERROR', "Game has not started");
       }
     });
 

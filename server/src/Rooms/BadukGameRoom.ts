@@ -55,10 +55,15 @@ export class BadukGameRoom{
   startGame() {
     this.black_client.emit("PLAYING_BLACK");
     this.white_client.emit("PLAYING_WHITE");
+    this.has_started = true;
     this.server.to(this.roomID).emit("START_GAME", getNumsFromBoard(this.game.board));
   }
 
   playMove(socket: Socket, x: number, y: number) {
+    if (!this.has_started) {
+      socket.emit("ERROR", "Game has not started");
+      return
+    }
     const color = (socket.id == this.black_client.id) ? Color.BLACK : (socket.id === this.white_client.id) ? Color.WHITE : null;
     if (color === null) {
       socket.emit('ERROR', 'You are not a player');
@@ -73,6 +78,10 @@ export class BadukGameRoom{
   }
 
   playPass(socket: Socket) {
+    if (!this.has_started) {
+      socket.emit("ERROR", "Game has not started");
+      return
+    }
     const color = (socket.id == this.black_client.id) ? Color.BLACK : (socket.id === this.white_client.id) ? Color.WHITE : null;
     if (color === null) {
       socket.emit('ERROR', 'You are not a player');
