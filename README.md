@@ -11,11 +11,24 @@ Create a public or private study room to annotate and discuss games with other p
 Spectate or join public games and study rooms. 
 
 ## Try it out
-Clone this repo and in the server folder run
-```npm run dev```
-open the client folder and run
-```yarn start```
-Open two instances of `localhost:3000` and press the Start Game button
+Clone this repo
+
+### Server 
+First build the server using webpack using the command 
+```
+npm run build
+```
+
+In a separate terminal run 
+```
+npm run dev
+```
+### Client 
+Run
+```
+yarn start
+```
+and open your browser to `localhost:3000`.
 
 # TODO
 Too much, check Projects/BadukBin on github to get an idea.
