@@ -5,15 +5,17 @@ import io, { Socket } from 'socket.io-client'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
+interface AppProps{
+  roomID: string;
+}
 
-const App = () => {
+const App = (props: AppProps) => {
   const [board, setBoard] = useState(Array(19).fill(0).map(() => new Array(19).fill(0)));
   const [socket, setSocket] = useState({} as Socket);
   const [black_captures, setBlackCaptures] = useState(0);
   const [white_captures, setWhiteCaptures] = useState(0);
   const [my_color, setMyColor] = useState(0);
   const [their_color, setTheirColor] = useState(0);
-  const [roomID, setRoomID] = useState("");
 
   useEffect(() => {
     const newSocket = io(`localhost:2567`);
@@ -24,11 +26,6 @@ const App = () => {
       console.log("Update board")
       setBoard(board);
     });
-
-    newSocket.on('ROOM_ID', (roomID: string) => {
-      setRoomID(roomID);
-      console.log('ROOM_ID:', roomID)
-    })
 
     newSocket.on("ERROR", (msg: string) => {
       toast(msg);
@@ -64,7 +61,7 @@ const App = () => {
         <BadukBoard
           board={board}
           boxSize={2} 
-          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false, roomID) }}
+          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false, props.roomID) }}
         />
         <Sidebar
           color={my_color}
@@ -72,8 +69,7 @@ const App = () => {
           name={['Anon', 'Anon']}
           online={[true, true]}
           socket={socket}
-          roomID={roomID}
-          setRoomID={setRoomID}
+          roomID={props.roomID}
         />
       </div>
       <ToastContainer

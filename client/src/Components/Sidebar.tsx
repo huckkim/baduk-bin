@@ -9,13 +9,11 @@ interface SidebarProps{
 	online: [boolean, boolean];
   socket: Socket;
   roomID: string;
-  setRoomID: React.Dispatch<React.SetStateAction<string>>;
 };
 
 interface SocketProps{
   socket: Socket;
   roomID: string;
-  setRoomID: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const ButtonDisplay = (props: SocketProps) => {
@@ -66,12 +64,10 @@ const Sidebar = (props: SidebarProps) =>{
         <ButtonDisplay
           socket={props.socket}
           roomID={props.roomID}
-          setRoomID={props.setRoomID}
         />
         <RoomIdEnter 
           socket={props.socket}
           roomID={props.roomID}
-          setRoomID={props.setRoomID}
         />
       </div>
 
