@@ -1,23 +1,30 @@
-import { Nav,NavDropdown, Container, Navbar } from 'react-bootstrap'
+import { Nav, Container, Navbar } from 'react-bootstrap'
+import { Switch, Route } from 'react-router';
+import PlayScreen from './PlayScreen'
 
 const HomeNavbar = () => {
   return (
-    <Navbar bg="light" expand="lg">
-      <Container>
-        <Navbar.Brand href="#home">BadukBin</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <NavDropdown title="Play" id="basic-nav-dropdown">
-              <NavDropdown.Item href="#action/3.1">Create</NavDropdown.Item>
-              <NavDropdown.Item href="#action/3.2">Join</NavDropdown.Item>
-            </NavDropdown>
-            <Nav.Link href="#href">Study</Nav.Link>
-            <Nav.Link href="#href">Discover</Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+    <div className='home-navbar'>
+      <Navbar bg="light" expand="lg">
+        <Container>
+          <Navbar.Brand href="/home">BadukBin</Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="me-auto">
+              <Nav.Link href="/play">Play</Nav.Link>
+              <Nav.Link href="/study">Study</Nav.Link>
+              <Nav.Link href="/discover">Discover</Nav.Link>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+      <Switch>
+        <Route
+          path="/play"
+          component={PlayScreen}
+        />
+      </Switch>
+    </div>
   )
 }
 
