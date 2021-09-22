@@ -24,6 +24,7 @@ const RoomManager = (io: Server) => {
       else {
         game_state.addRandom(socket);
       }
+      console.log(roomID)
       rooms.set(roomID, game_state);
       socket.emit('ROOM_ID', roomID);
     });
@@ -43,15 +44,20 @@ const RoomManager = (io: Server) => {
     socket.on('PLAY_MOVE', (x: string, y: string, pass: boolean, roomID: string) => {
       const game_state = rooms.get(roomID);
       if (game_state !== undefined) {
-        if (pass) {
-          game_state.playPass(socket);
+        if(game_state.has_started){
+          if (pass) {
+            game_state.playPass(socket);
+          }
+          else {
+            game_state.playMove(socket, parseInt(x), parseInt(y));
+          }
         }
-        else {
-          game_state.playMove(socket, parseInt(x), parseInt(y));
+        else{
+          socket.emit('ERROR', "Game has not started")
         }
       }
       else {
-        socket.emit('ERROR', "Game has not started");
+        socket.emit('ERROR', "No game with roomID exists");
       }
     });
 

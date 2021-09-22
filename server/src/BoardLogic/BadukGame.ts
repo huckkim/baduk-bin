@@ -1,4 +1,3 @@
-import { Server, Socket } from "socket.io";
 import { Board, Coord, Color} from "../shared/types";
 import { findBorderingColor, setVisited, cloneBoard, isBoardEqual, getNumsFromBoard} from "./helper";
 

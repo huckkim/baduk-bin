@@ -25,8 +25,8 @@ const App = () => {
       setBoard(board);
     });
 
-    newSocket.on('ROOM_ID', (roomId: string) => {
-      setRoomID(roomId);
+    newSocket.on('ROOM_ID', (roomID: string) => {
+      setRoomID(roomID);
       console.log('ROOM_ID:', roomID)
     })
 
@@ -71,6 +71,9 @@ const App = () => {
           captures={[black_captures, white_captures]}
           name={['Anon', 'Anon']}
           online={[true, true]}
+          socket={socket}
+          roomID={roomID}
+          setRoomID={setRoomID}
         />
       </div>
       <ToastContainer
