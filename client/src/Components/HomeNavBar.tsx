@@ -23,6 +23,10 @@ const HomeNavbar = () => {
           path="/play"
           component={PlayScreen}
         />
+        <Route
+          path="/study"
+        >
+        </Route>
       </Switch>
     </div>
   )
