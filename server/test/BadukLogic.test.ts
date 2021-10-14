@@ -934,7 +934,7 @@ test('play full game, expect correct score', () => {
   expect(white_score).toBe(11);
 });
 
-test.only('start game, invalid ko move', () => {
+test('start game, invalid ko move', () => {
   const board = [
     ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
     ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1

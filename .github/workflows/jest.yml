@@ -1,0 +1,20 @@
+name: Jest Coverage Report
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  Jest_Coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: cd server && npm ci
+      - uses: mattallty/jest-github-action@v1.0.3
+        with:
+          working-directory: "server"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
