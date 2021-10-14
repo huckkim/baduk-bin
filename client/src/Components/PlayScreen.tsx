@@ -4,16 +4,13 @@ import io, { Socket } from "socket.io-client";
 import BadukBoard from "./Board";
 import Sidebar from "./Sidebar";
 
-interface AppProps{
-  roomID: string;
-}
-
-const PlayScreen = (props: AppProps) => {
+const PlayScreen = () => {
   const [board, setBoard] = useState(Array(19).fill(0).map(() => new Array(19).fill(0)));
   const [socket, setSocket] = useState({} as Socket);
   const [black_captures, setBlackCaptures] = useState(0);
   const [white_captures, setWhiteCaptures] = useState(0);
   const [my_color, setMyColor] = useState(0);
+  const [roomID, setRoomId] = useState("");
 
   useEffect(() => {
     const newSocket = io(`localhost:2567`);
@@ -28,6 +25,11 @@ const PlayScreen = (props: AppProps) => {
     newSocket.on("ERROR", (msg: string) => {
       toast(msg);
     });
+
+    newSocket.on("ROOM_ID", (roomId: string) => {
+      setRoomId(roomId);
+      alert(roomId);
+    })
 
     newSocket.on("GAME_STARTED", (board: Array<Array<number>>,) => {
       setBoard(board);
@@ -57,7 +59,7 @@ const PlayScreen = (props: AppProps) => {
         <BadukBoard
           board={board}
           boxSize={2} 
-          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false, props.roomID) }}
+          vertexOnClick={(x: number, y:number) => { (socket as Socket).emit("PLAY_MOVE", x, y, false, roomID) }}
         />
         <Sidebar
           color={my_color}
@@ -65,7 +67,8 @@ const PlayScreen = (props: AppProps) => {
           name={['Anon', 'Anon']}
           online={[true, true]}
           socket={socket}
-          roomID={props.roomID}
+          roomID={roomID}
+          setRoomId={setRoomId}
         />
       </div>
       <ToastContainer

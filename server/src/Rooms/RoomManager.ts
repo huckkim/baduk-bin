@@ -20,16 +20,15 @@ const RoomManager = (io: Server) => {
         game_state.addBlack(socket);
       } else if (color == 'white') {
         game_state.addWhite(socket);
-      }
-      else {
+      } else {
         game_state.addRandom(socket);
       }
       console.log(roomID)
       rooms.set(roomID, game_state);
       socket.emit('ROOM_ID', roomID);
     });
-
     socket.on('JOIN_GAME', (roomID: string) => {
+      console.log(socket.id + " is joining game " + roomID)
       const game_state = rooms.get(roomID);
       if (game_state !== undefined) {
         socket.join(roomID);

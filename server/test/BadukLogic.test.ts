@@ -1,8 +1,7 @@
-import {Board, Coord, Color } from '../src/shared/types'
+import { Coord, Color } from '../src/shared/types'
 import { isBoardEmpty, isBoardEqual, setColor, getCoordFromBoard, getBoardFromStrings, findBorderingColor, alphaToCoord, getStringsFromBoard, cloneBoard } from '../src/BoardLogic/helper'
 import BadukGame from '../src/BoardLogic/BadukGame'
 import { findSpaceSize,  setupBoard, hasLiberties, killGroup, killSurroundingGroups,   calculateTerritory, } from '../src/BoardLogic/BadukGame'
-import exp from 'constants';
 
 /** 
  *  Ensure that the setup board returns a valid board given a handicap and the proper player
@@ -457,16 +456,9 @@ test('Medium stone group, corner, has some liberties', () => {
   expect(hasLiberties(tboard, loc)).toBe(true);
 });
 
-test('Large stone group, has all liberties', () => {
-
-});
-
-test('Large stone group, has no liberties', () => {
-
-});
-test('Large stone group, has some liberties', () => {
-
-});
+test.todo('Large stone group, has all liberties');
+test.todo('Large stone group, has no liberties');
+test.todo('Large stone group, has some liberties');
 
 test.todo('Large stone group, side, has all liberties');
 test.todo('Large stone group, side, has no liberties');
@@ -921,6 +913,7 @@ test('play full game, expect correct score', () => {
     let [valid, ] = game.playMove(alphaToCoord(moves[i]), game.curr_player)
     expect(valid).toBe(true);
   }
+  // remove dead groups
   game.removeGroup(alphaToCoord("B9"));
   game.removeGroup(alphaToCoord("D9"));
   expect(game.black_captures).toBe(0);
@@ -934,7 +927,32 @@ test('play full game, expect correct score', () => {
   expect(white_score).toBe(11);
 });
 
-test('start game, invalid ko move', () => {
+test('end game, remove dead white group', () => {
+  let game = new BadukGame(9, [], 5.5);
+  // https://online-go.com/game/697808 + endgame moves
+  const moves = [
+    "E5", "G5", "C5", "F7", "E7", "F6", "F3", "D3",
+    "B3", "F2", "G2", "G3", "E2", "F4", "E3", "H2",
+    "E8", "E4", "D4", "E6", "D6", "G1", "D2", "F8",
+    "D7", "E9", "D9", "F9", "E1", "F1",
+    "D5" // contested point
+  ];
+  for (let i = 0; i < moves.length; ++i){
+    let [valid, ] = game.playMove(alphaToCoord(moves[i]), game.curr_player)
+    expect(valid).toBe(true);
+  }
+  expect(game.black_captures).toBe(0);
+  expect(game.white_captures).toBe(1);
+  game.playMove(null, game.curr_player);
+  game.playMove(null, game.curr_player);
+  game.removeGroup(alphaToCoord("D3"));
+  let [black_score, white_score, msg] = game.calculateTerritory();
+  const winner = black_score > white_score ? Color.BLACK : Color.WHITE;
+  expect(winner).toBe(Color.WHITE);
+});
+test.todo('end game, remove dead black group');
+
+test('play game, invalid ko move', () => {
   const board = [
     ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 0
     ['-', '-', '-', '-', '-', '-', '-', '-', '-',], // 1
@@ -962,10 +980,9 @@ test('start game, invalid ko move', () => {
   expect(game.curr_player = Color.BLACK);
   let [valid3,] = game.playMove(new Coord(4, 4), game.curr_player);
   expect(valid3).toBe(false);
-
 });
 
-test('start game, invalid move already stone there', () => {
+test('play game, invalid move already stone there', () => {
   let game = new BadukGame(9, [], 0.5);
   expect(game.curr_player).toBe(Color.BLACK);
   let [valid1, ] = game.playMove(alphaToCoord("D5"), game.curr_player)
@@ -975,6 +992,28 @@ test('start game, invalid move already stone there', () => {
   expect(valid2).toBe(false);
 })
 
-test('start game, invalid suicide move', () => {
+test('play game, invalid suicide move', () => {
+  let game = new BadukGame(9, [], 0);
+  // https://online-go.com/game/697808 + endgame moves
+  const moves = [
+    "H9", "G9",
+    "H8", "G8",
+    "J8", "H7",
+    "C7", "J7"
+  ];
+  for (let i = 0; i < moves.length; ++i){
+    let [valid, ] = game.playMove(alphaToCoord(moves[i]), game.curr_player)
+    expect(valid).toBe(true);
+  }
+  expect(game.curr_player).toBe(Color.BLACK);
+  let [valid,] = game.playMove(alphaToCoord("J9"), game.curr_player);
+  expect(valid).toBe(false);
+});
 
+test('play game, invalid move, not your turn', () => {
+  let game = new BadukGame(9, [], 0);
+  let [valid1,] = game.playMove(alphaToCoord("D5"), Color.BLACK);
+  expect(valid1).toBe(true);
+  let [valid2,] = game.playMove(alphaToCoord("D6"), Color.BLACK);
+  expect(valid2).toBe(false);
 });

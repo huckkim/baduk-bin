@@ -4,7 +4,7 @@
     "description": "",
     "main": "server.js",
     "scripts": {
-        "test": "jest",
+        "test": "jest --coverage=true",
         "build": "webpack --config webpack.development.js",
         "build-prod": "webpack --config webpack.production.js",
         "dev": "nodemon dist/server.js"

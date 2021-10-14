@@ -151,3 +151,6 @@ test('function bordering color white, corner', () => {
   let color = findBorderingColor(tboard, loc);
   expect(color).toBe(Color.WHITE);
 });
+
+test.todo("select white group from board");
+test.todo("select black group from board");
