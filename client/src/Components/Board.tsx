@@ -115,8 +115,8 @@ const BadukBoard = (props: BadukBoardProps) => {
     <div
       className="baduk-board"
       style={{
-        width: (xyrange.length*props.boxSize) + 'em',
-        height: (xyrange.length*props.boxSize) + 'em',
+        width: (xyrange.length * props.boxSize + 0.5) + 'em',
+        height: (xyrange.length * props.boxSize + 0.5) + 'em',
       }}>
       {/* Renders the nxn grid with the star points*/}
       <Grid
