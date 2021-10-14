@@ -1,6 +1,7 @@
 import { Socket } from 'socket.io-client'
 import { Button, ButtonGroup, FormControl, InputGroup } from 'react-bootstrap';
 import PlayerDisplay from './PlayerDisplay'
+import { useState } from 'react';
 
 interface SidebarProps{
 	color: number;
@@ -9,11 +10,13 @@ interface SidebarProps{
 	online: [boolean, boolean];
   socket: Socket;
   roomID: string;
+  setRoomId: React.Dispatch<React.SetStateAction<string>>;
 };
 
 interface SocketProps{
   socket: Socket;
   roomID: string;
+  setRoomId: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const ButtonDisplay = (props: SocketProps) => {
@@ -29,6 +32,7 @@ const ButtonDisplay = (props: SocketProps) => {
 }
 
 const RoomIdEnter = (props: SocketProps) => {
+  const [val, setVal] = useState("");
   return(
     <div className="room-id-enter">
       <InputGroup>
@@ -36,9 +40,14 @@ const RoomIdEnter = (props: SocketProps) => {
           placeholder="Room ID"
           aria-label="Recipient's username"
           aria-describedby="basic-addon2"
+          onChange={e => setVal(e.target.value)}
         />
         <Button 
-          onClick={() => {}}
+          onClick={() => {
+            console.log(val)
+            props.setRoomId(val);
+            props.socket.emit('JOIN_GAME', val)
+          }}
           variant="outline-secondary" id="button-addon2">
           Join Game
         </Button>
@@ -64,10 +73,12 @@ const Sidebar = (props: SidebarProps) =>{
         <ButtonDisplay
           socket={props.socket}
           roomID={props.roomID}
+          setRoomId={props.setRoomId}
         />
         <RoomIdEnter 
           socket={props.socket}
           roomID={props.roomID}
+          setRoomId={props.setRoomId}
         />
       </div>
 

@@ -1,9 +1,8 @@
 import { Accordion } from 'react-bootstrap'
-import HomeNavbar from './HomeNavBar'
 
-const HomeOptions = () => {
+const HomeScreen = () => {
   return (
-    <div className='home-options'>
+    <div className='home-screen'>
       {/* Three Single Select */}
       <Accordion defaultActiveKey="0">
         <Accordion.Item eventKey="0">
@@ -29,13 +28,5 @@ const HomeOptions = () => {
   )
 }
 
-const HomeScreen = () => {
-  return (
-    <div className='homescreen'>
-      <HomeNavbar />
-      <HomeOptions />
-    </div>
-  )
-}
 
 export default HomeScreen;
