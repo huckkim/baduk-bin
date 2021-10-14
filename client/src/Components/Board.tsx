@@ -1,3 +1,5 @@
+import Vertex from "./Vertex";
+
 interface BadukBoardProps {
   board: Array<Array<number>>;
   boxSize: number;
@@ -13,14 +15,6 @@ interface GridLineProps {
   boxSize: number;
 };
 
-interface VertexProps{
-  board: Array<Array<number>>;
-  x: number;
-  y: number;
-  marker: string;
-  boxSize: number;
-  vertexOnClick: any;
-};
 
 const Grid = (props: GridLineProps) => {
   let horiLines = props.xyrange.map((y) => {
@@ -84,24 +78,6 @@ const Grid = (props: GridLineProps) => {
   )
 };
 
-const Vertex = (props: VertexProps) => {
-  return (
-    <div
-      onClick={() => {
-        props.vertexOnClick(props.x, props.y);
-      }}
-      key={props.x + '-' + props.y+'-'+props.board[props.y][props.x]}
-      className={"baduk-stone baduk-stone-" + props.board[props.y][props.x]}
-      style={{
-        top: props.boxSize*props.y +'em',
-        left: props.boxSize*props.x +'em',
-        width: props.boxSize + 'em',
-        height: props.boxSize + 'em',
-      }}
-    >
-    </div>
-  )
-};
 
 const arrRange = (start: number, len: number) =>
   Array.from(new Array(len), (x, i) => i);
