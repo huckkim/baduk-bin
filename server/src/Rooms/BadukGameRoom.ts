@@ -42,12 +42,15 @@ export class BadukGameRoom{
 
   addOther(socket: Socket) {
     if (this.black_client === null) {
+      console.log("Added socket as black")
       this.black_client = socket;
     }
     else if(this.white_client === null) {
+      console.log("Added socket as white")
       this.white_client = socket;
     }
     else {
+      console.log("Added socket as spectator")
       this.spectators.push(socket);
     }
   }
@@ -56,6 +59,7 @@ export class BadukGameRoom{
     this.black_client.emit("PLAYING_BLACK");
     this.white_client.emit("PLAYING_WHITE");
     this.has_started = true;
+    this.game = new BadukGame(19, [], 6.5);
     this.server.to(this.roomID).emit("START_GAME", getNumsFromBoard(this.game.board));
   }
 

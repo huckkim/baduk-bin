@@ -1,8 +1,7 @@
-import {Board, Coord, Color } from '../src/shared/types'
+import { Coord, Color } from '../src/shared/types'
 import { isBoardEmpty, isBoardEqual, setColor, getCoordFromBoard, getBoardFromStrings, findBorderingColor, alphaToCoord, getStringsFromBoard, cloneBoard } from '../src/BoardLogic/helper'
 import BadukGame from '../src/BoardLogic/BadukGame'
 import { findSpaceSize,  setupBoard, hasLiberties, killGroup, killSurroundingGroups,   calculateTerritory, } from '../src/BoardLogic/BadukGame'
-import exp from 'constants';
 
 /** 
  *  Ensure that the setup board returns a valid board given a handicap and the proper player
